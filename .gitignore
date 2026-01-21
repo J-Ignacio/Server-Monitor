@@ -14,3 +14,8 @@ env/
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+build/
+dist/
+*.spec
+__pycache__/
+venv/
