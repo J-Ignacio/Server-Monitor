@@ -12,7 +12,7 @@ echo.
 
 :: 1. Iniciar el Servidor API
 echo [+] Iniciando Servidor de Datos...
-start "NOC-API" /min .\venv\Scripts\python.exe src\servidor.py
+start "NOC-API" /min .\venv\Scripts\python.exe -m uvicorn src.servidor:app --host 0.0.0.0 --port 8000
 
 :: 2. Esperar 3 segundos
 timeout /t 3 /nobreak >nul
