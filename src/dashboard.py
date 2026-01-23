@@ -13,6 +13,7 @@ placeholder = st.empty()
 def obtener_datos():
     """Obtiene métricas del servidor central"""
     try:
+    
         response = requests.get("http://localhost:8000/estado", timeout=2)
         return response.json() if response.status_code == 200 else {}
     except:
@@ -21,7 +22,8 @@ def obtener_datos():
 # Bucle de actualización (cada 2 segundos)
 while True:
     base_datos = obtener_datos()
-    
+   
+   
     with placeholder.container():
         if base_datos:
             # Crear columnas dinámicas por servidor

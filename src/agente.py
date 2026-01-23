@@ -14,7 +14,8 @@ def obtener_ip_real():
     """Obtiene la IP local del servidor"""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        s.connect(('8.8.8.8', 1))
+      
+          s.connect(('8.8.8.8', 1))
         IP = s.getsockname()[0]
     except Exception:
         IP = '127.0.0.1'
