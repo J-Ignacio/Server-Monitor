@@ -1,5 +1,7 @@
 @echo off
-REM Script de configuración automática para otra PC
+REM Script universal para Windows - Setup inicial
+
+setlocal enabledelayedexpansion
 
 title Setup - Monitor de Servidores NOC
 color 0a
@@ -7,44 +9,76 @@ color 0a
 cd /d "%~dp0"
 
 echo.
-echo =========================================
-echo   SETUP - Monitor de Servidores NOC
-echo =========================================
+echo ========================================
+echo   SISTEMA DE MONITOREO NOC - SETUP
+echo ========================================
 echo.
 
-REM Verificar si Python está instalado
+REM Detectar si Python está instalado
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Python no está instalado o no está en PATH
-    echo Descarga desde: https://www.python.org/downloads/
-    echo Recuerda marcar "Add Python to PATH" durante la instalación
+    echo ❌ Python no está instalado o no está en el PATH
+    echo.
+    echo Descargue Python desde: https://www.python.org/downloads/
+    echo Asegúrese de marcar "Add Python to PATH" durante la instalación
     pause
     exit /b 1
 )
 
-echo [1] Creando ambiente virtual...
-if not exist venv (
+echo ✓ Python detectado
+python --version
+
+REM Crear ambiente virtual
+echo.
+echo 📦 Creando ambiente virtual...
+if not exist "venv" (
     python -m venv venv
-    echo [OK] Ambiente virtual creado
+    if errorlevel 1 (
+        echo ❌ Error al crear el ambiente virtual
+        pause
+        exit /b 1
+    )
+    echo ✓ Ambiente virtual creado
 ) else (
-    echo [OK] Ambiente virtual ya existe
+    echo ✓ Ambiente virtual ya existe
 )
 
+REM Activar ambiente virtual
 echo.
-echo [2] Activando ambiente virtual...
+echo 🔧 Activando ambiente virtual...
 call venv\Scripts\activate.bat
 
+REM Actualizar pip
 echo.
-echo [3] Actualizando pip...
+echo 📥 Actualizando pip...
 python -m pip install --upgrade pip >nul 2>&1
 
+REM Instalar dependencias
 echo.
-echo [4] Instalando dependencias...
+echo 📚 Instalando dependencias...
 pip install -r requeriments.txt
 if errorlevel 1 (
-    echo [ERROR] Fallo al instalar dependencias
+    echo ❌ Error al instalar dependencias
     pause
     exit /b 1
+)
+
+REM Crear directorio de configuración
+echo.
+echo 📁 Creando directorios...
+if not exist "config" mkdir config
+if not exist "logs" mkdir logs
+
+REM Crear archivo de configuración
+echo.
+echo ⚙️  Configuración inicial...
+if not exist "config\config.json" (
+    python -c "from src.config import guardar_config, CONFIGURACION_PREDETERMINADA; guardar_config(CONFIGURACION_PREDETERMINADA)"
+    echo ✓ Archivo de configuración creado en: config/config.json
+    echo.
+    echo ⚠️  IMPORTANTE: Editar config/config.json con la IP de su NOC
+) else (
+    echo ✓ Configuración ya existe
 )
 
 echo.
@@ -52,20 +86,18 @@ echo [5] Regenerando AGENTE_FINAL.exe...
 pip install pyinstaller >nul 2>&1
 pyinstaller AGENTE_FINAL.spec >nul 2>&1
 if exist dist\AGENTE_FINAL.exe (
-    echo [OK] AGENTE_FINAL.exe generado correctamente
+    echo ✓ AGENTE_FINAL.exe generado correctamente
 ) else (
-    echo [ADVERTENCIA] No se pudo generar AGENTE_FINAL.exe
+    echo ⚠️  No se pudo generar AGENTE_FINAL.exe
     echo Intenta ejecutar manualmente: pyinstaller AGENTE_FINAL.spec
 )
 
 echo.
-echo =========================================
-echo   ✅ CONFIGURACIÓN COMPLETADA
-echo =========================================
+echo ✅ Setup completado correctamente
 echo.
 echo Próximos pasos:
-echo 1. Doble clic en: Iniciar_NOC.bat
-echo 2. El dashboard se abrirá automáticamente
-echo 3. Acceder a: http://localhost:8501
+echo 1. Editar config/config.json con la IP correcta de su NOC
+echo 2. En NOC: Ejecute Iniciar_NOC.bat
+echo 3. En servidores: Ejecute agente.py o AGENTE_FINAL.exe
 echo.
 pause

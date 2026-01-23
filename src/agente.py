@@ -3,19 +3,14 @@ import psutil
 import requests
 import time
 import socket
-
-# Configuración del servidor central donde reportar
-IP_CENTRAL = "192.168.4.143"  # Cambiar con la IP de la laptop NOC
-PUERTO = "8000"
-URL = f"http://{IP_CENTRAL}:{PUERTO}/reportar"
+from src.config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO
 
 # Detecta la IP real del servidor en la red local
 def obtener_ip_real():
     """Obtiene la IP local del servidor"""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-      
-          s.connect(('8.8.8.8', 1))
+        s.connect(('8.8.8.8', 1))
         IP = s.getsockname()[0]
     except Exception:
         IP = '127.0.0.1'
@@ -28,10 +23,13 @@ hostname = socket.gethostname()
 ID_SERVIDOR = f"{hostname} ({obtener_ip_real()})"
 
 print(f"✓ Agente iniciado: {ID_SERVIDOR}")
-print(f"✓ Reportando a: {URL}")
+print(f"✓ Reportando a: {URL_REPORTAR}")
+print(f"⏱️  Intervalo de envío: {AGENTE_INTERVALO}s")
 
 def enviar_datos():
-    """Recopila métricas cada 5s y las envía al servidor central"""
+    """Recopila métricas cada AGENTE_INTERVALO segundos y las envía al servidor central"""
+    intentos_fallidos = 0
+    
     while True:
         try:
             metricas = {
@@ -41,17 +39,22 @@ def enviar_datos():
                 "temp": 0.0                                 # Temperatura (no disponible)
             }
             
-            response = requests.post(URL, json=metricas, timeout=5)
+            response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT)
             
             if response.status_code == 200:
-                print(f"✓ Datos enviados")
+                print(f"✓ Datos enviados - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}%")
+                intentos_fallidos = 0
             else:
                 print(f"✗ Error: {response.status_code}")
+                intentos_fallidos += 1
                 
         except Exception as e:
-            print(f"✗ Sin conexión (reintentando en 5s)")
+            intentos_fallidos += 1
+            if intentos_fallidos >= AGENTE_REINTENTOS:
+                print(f"✗ Sin conexión al servidor (reintentando cada {AGENTE_ESPERA_REINTENTO}s)")
+                intentos_fallidos = 0
             
-        time.sleep(5)
+        time.sleep(AGENTE_INTERVALO)
 
 if __name__ == "__main__":
     enviar_datos()

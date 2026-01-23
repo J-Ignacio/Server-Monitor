@@ -1,6 +1,7 @@
 """API FastAPI: recibe y almacena métricas de agentes remotos"""
 from fastapi import FastAPI
 from pydantic import BaseModel
+from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG
 
 app = FastAPI()
 
@@ -18,6 +19,8 @@ base_datos = {}
 @app.get("/estado")
 async def obtener_estado():
     """Retorna métricas de todos los servidores monitoreados"""
+    if DEBUG:
+        print(f"📊 Solicitud de estado - Total servidores: {len(base_datos)}")
     return base_datos
 
 # POST: Recibe y guarda métricas de un agente
@@ -31,3 +34,12 @@ def recibir_metricas(datos: Metricas):
     }
     print(f"✅ [{datos.id_servidor}] CPU: {datos.cpu}% | RAM: {datos.ram}%")
     return {"status": "ok"}
+
+if __name__ == "__main__":
+    print(f"\n🚀 Sistema de Monitoreo - Servidor Central")
+    print(f"📡 Escuchando en: {SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}")
+    print(f"📊 Estado: http://{SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}/estado")
+    print(f"📤 Reportar: http://{SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}/reportar\n")
+    
+    import uvicorn
+    uvicorn.run(app, host=SERVIDOR_CENTRAL_HOST, port=SERVIDOR_CENTRAL_PUERTO)

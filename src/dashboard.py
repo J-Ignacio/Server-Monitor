@@ -2,6 +2,7 @@
 import streamlit as st
 import requests
 import time
+from src.config import URL_ESTADO, DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO
 
 # Configurar página
 st.set_page_config(page_title="NOC Monitor", layout="wide")
@@ -13,13 +14,13 @@ placeholder = st.empty()
 def obtener_datos():
     """Obtiene métricas del servidor central"""
     try:
-    
-        response = requests.get("http://localhost:8000/estado", timeout=2)
+        response = requests.get(f"http://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/estado", timeout=2)
         return response.json() if response.status_code == 200 else {}
-    except:
+    except Exception as e:
+        st.warning(f"⚠️  No se puede conectar al servidor: {SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}")
         return {}
 
-# Bucle de actualización (cada 2 segundos)
+# Bucle de actualización (cada DASHBOARD_INTERVALO segundos)
 while True:
     base_datos = obtener_datos()
    
@@ -43,4 +44,4 @@ while True:
         else:
             st.info("Esperando conexión de agentes remotos...")
 
-    time.sleep(2)
+    time.sleep(DASHBOARD_INTERVALO)

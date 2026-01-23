@@ -1,27 +1,34 @@
 @echo off
-title PANEL DE CONTROL NOC
+title PANEL DE CONTROL NOC - Monitor de Servidores
 color 0b
 
-:: Nos movemos a la carpeta donde esta el archivo .bat
+REM Nos movemos a la carpeta donde está el archivo .bat
 cd /d "%~dp0"
 
+echo.
 echo ==========================================
-echo    INICIANDO MONITOR DE SERVIDORES NOC
+echo   INICIANDO MONITOR DE SERVIDORES NOC
 echo ==========================================
 echo.
 
-:: 1. Iniciar el Servidor API
-echo [+] Iniciando Servidor de Datos...
-start "NOC-API" /min .\venv\Scripts\python.exe -m uvicorn src.servidor:app --host 0.0.0.0 --port 8000
+REM Activar ambiente virtual
+call venv\Scripts\activate.bat
 
-:: 2. Esperar 3 segundos
+echo ✓ Ambiente virtual activado
+echo.
+
+REM 1. Iniciar el Servidor API
+echo 📡 Iniciando Servidor de Datos...
+start "NOC-API" /min python -m uvicorn src.servidor:app --host 0.0.0.0 --port 8000
+
+REM 2. Esperar 3 segundos
 timeout /t 3 /nobreak >nul
 
-:: 3. Iniciar el Dashboard usando el modulo de python directamente
-:: Esto evita el error del launcher de streamlit.exe
-echo [+] Lanzando Dashboard Visual...
-.\venv\Scripts\python.exe -m streamlit run src\dashboard.py
+REM 3. Iniciar el Dashboard usando el modulo de python directamente
+REM Esto evita el error del launcher de streamlit.exe
+echo 📊 Lanzando Dashboard Visual...
+python -m streamlit run src\dashboard.py
 
 echo.
-echo [!] Sistema en ejecucion. No cierres esta ventana.
+echo ⚠️  Sistema en ejecución. No cierres esta ventana.
 pause
