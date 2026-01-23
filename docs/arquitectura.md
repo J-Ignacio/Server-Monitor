@@ -9,7 +9,7 @@
 └────────┬─────────┘         └────────┬─────────┘         └────────┬─────────┘
          │                            │                            │
          │ POST /reportar             │                            │
-         │ {cpu, ram, temp}           │                            │
+         │ {cpu, ram}                 │                            │
          ├───────────────────────────>│                            │
          │                       Almacena                          │
          │                            │                            │
@@ -28,6 +28,7 @@
 - Recopila: CPU, RAM cada 5 segundos
 - Envía JSON al endpoint POST `/reportar`
 - Reintentos automáticos en desconexión
+- **Nota**: Temperatura no capturada en versión actual (requiere drivers específicos del hardware)
 
 ### 2. Servidor Central (`servidor.py`)
 - API FastAPI en laptop central
@@ -54,8 +55,7 @@ Content-Type: application/json
 {
   "id_servidor": "SERVIDOR1 (192.168.1.100)",
   "cpu": 45.2,
-  "ram": 62.1,
-  "temp": 0.0
+  "ram": 62.1
 }
 ```
 
@@ -77,8 +77,7 @@ Host: localhost:8000
 {
   "SERVIDOR1 (192.168.1.100)": {
     "cpu": 45.2,
-    "ram": 62.1,
-    "temp": 0.0
+    "ram": 62.1
   }
 }
 ```
@@ -95,7 +94,7 @@ Host: localhost:8000
 ## Limitaciones
 
 - **Almacenamiento**: En memoria (se pierden datos al reiniciar)
-- **Temperatura**: No disponible (necesita drivers específicos)
+- **Temperatura**: ❌ No disponible en versión actual (requiere drivers específicos y acceso administrativo)
 - **Escala**: ~100 servidores máximo
 - **Persistencia**: Implementar base de datos si se requiere histórico
 

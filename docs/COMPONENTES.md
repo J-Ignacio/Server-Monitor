@@ -45,6 +45,7 @@ Función:
 - Recopila CPU, RAM cada 5 segundos
 - Envía datos al servidor central
 - Reintentos automáticos si hay desconexión
+- **Nota**: Temperatura no capturada (no disponible en versión actual)
 
 Configuración:
 ```python
@@ -74,8 +75,7 @@ Endpoints:
 {
   "SERVIDOR1 (192.168.1.100)": {
     "cpu": 45.2,
-    "ram": 62.1,
-    "temp": 0.0
+    "ram": 62.1
   }
 }
 ```
@@ -85,8 +85,7 @@ Endpoints:
 {
   "id_servidor": "SERVIDOR1 (192.168.1.100)",
   "cpu": 45.2,
-  "ram": 62.1,
-  "temp": 0.0
+  "ram": 62.1
 }
 ```
 
