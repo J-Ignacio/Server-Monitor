@@ -45,6 +45,9 @@ streamlit run src/dashboard.py
 | `src/agente.py` | Código fuente del agente |
 | `src/servidor.py` | Código fuente del API |
 | `src/dashboard.py` | Código fuente del dashboard |
+| `config/config.json` | Configuración del sistema |
+| `test_configuracion.py` | Script de prueba de configuración |
+| `logs/` | Registros del sistema |
 
 ## 📚 Documentación
 
@@ -55,7 +58,6 @@ streamlit run src/dashboard.py
 
 ## ⚙️ Requisitos
 
-- Python 3.8+ (se descarga automáticamente con setup.bat
-- Python 3.8+ (para desarrollo)
+- Python 3.8+ (se descarga automáticamente con setup.bat)
 - Puerto 8000 disponible (central)
 - Red local accesible entre máquinas
