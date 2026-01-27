@@ -3,6 +3,12 @@ import psutil
 import requests
 import time
 import socket
+import sys
+from pathlib import Path
+
+# Agregar el directorio padre al path para importaciones
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from src.config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO
 
 # Detecta la IP real del servidor en la red local

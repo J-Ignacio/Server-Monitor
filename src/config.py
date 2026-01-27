@@ -19,7 +19,7 @@ CONFIG_DIR.mkdir(exist_ok=True)
 # Configuración predeterminada
 CONFIGURACION_PREDETERMINADA = {
     "servidor_central": {
-        "ip": "192.168.4.143",
+        "ip": "127.0.0.1",
         "puerto": 8000,
         "host": "0.0.0.0"
     },
@@ -88,7 +88,7 @@ ARCHIVO_LOG = CONFIG["sistema"]["archivo_log"]
 
 # URL completa del servidor central
 URL_REPORTAR = f"http://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/reportar"
-URL_ESTADO = f"http://{SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}/estado"
+URL_ESTADO = f"http://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/estado"
 
 if DEBUG:
     print(f"🔧 Modo DEBUG activo")

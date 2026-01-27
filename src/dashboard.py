@@ -22,10 +22,10 @@ def obtener_datos():
 
 # Bucle de actualización (cada DASHBOARD_INTERVALO segundos)
 while True:
-    base_datos = obtener_datos()
-   
-   
-    with placeholder.container():
+    try:
+        base_datos = obtener_datos()
+        
+        with placeholder.container():
         if base_datos:
             # Crear columnas dinámicas por servidor
             cols = st.columns(len(base_datos))
@@ -43,5 +43,9 @@ while True:
                         st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
         else:
             st.info("Esperando conexión de agentes remotos...")
-
+    except KeyboardInterrupt:
+        st.stop()
+    except Exception as e:
+        st.error(f"Error: {e}")
+    
     time.sleep(DASHBOARD_INTERVALO)
