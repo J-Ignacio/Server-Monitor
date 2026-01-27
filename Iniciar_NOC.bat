@@ -7,7 +7,7 @@ cd /d "%~dp0"
 
 echo.
 echo ==========================================
-echo   INICIANDO MONITOR DE SERVIDORES NOC
+echo    INICIANDO MONITOR DE SERVIDORES NOC
 echo ==========================================
 echo.
 
@@ -24,11 +24,10 @@ start "NOC-API" /min python -m uvicorn src.servidor:app --host 0.0.0.0 --port 80
 REM 2. Esperar 3 segundos
 timeout /t 3 /nobreak >nul
 
-REM 3. Iniciar el Dashboard usando el modulo de python directamente
-REM Esto evita el error del launcher de streamlit.exe
+REM 3. Iniciar el Dashboard
 echo 📊 Lanzando Dashboard Visual...
 python -m streamlit run src\dashboard.py
 
 echo.
-echo ⚠️  Sistema en ejecución. No cierres esta ventana.
+echo ⚠️ Sistema en ejecución. No cierres esta ventana.
 pause
