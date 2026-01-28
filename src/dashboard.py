@@ -26,23 +26,23 @@ while True:
         base_datos = obtener_datos()
         
         with placeholder.container():
-        if base_datos:
-            # Crear columnas dinámicas por servidor
-            cols = st.columns(len(base_datos))
+            if base_datos:
+                # Crear columnas dinámicas por servidor
+                cols = st.columns(len(base_datos))
             
-            for i, (servidor, info) in enumerate(base_datos.items()):
-                with cols[i]:
-                    with st.expander(f"🖥️ {servidor}", expanded=True):
-                        st.metric(label="CPU", value=f"{info['cpu']}%")
-                        st.progress(min(info['cpu']/100, 1.0))
+                for i, (servidor, info) in enumerate(base_datos.items()):
+                    with cols[i]:
+                        with st.expander(f"🖥️ {servidor}", expanded=True):
+                            st.metric(label="CPU", value=f"{info['cpu']}%")
+                            st.progress(min(info['cpu']/100, 1.0))
                         
-                        st.metric(label="Memoria RAM", value=f"{info['ram']}%")
-                        st.progress(min(info['ram']/100, 1.0))
+                            st.metric(label="Memoria RAM", value=f"{info['ram']}%")
+                            st.progress(min(info['ram']/100, 1.0))
                         
-                        st.write(f"🌡️ Temperatura: N/A")
-                        st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
-        else:
-            st.info("Esperando conexión de agentes remotos...")
+                            st.write(f"🌡️ Temperatura: N/A")
+                            st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
+            else:
+                st.info("Esperando conexión de agentes remotos...")
     except KeyboardInterrupt:
         st.stop()
     except Exception as e:
