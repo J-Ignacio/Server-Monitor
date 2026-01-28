@@ -6,10 +6,13 @@ import socket
 import sys
 from pathlib import Path
 
-# Agregar el directorio padre al path para importaciones
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO
+try:
+    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO
+except Exception as e:
+    print(f"\n[ERROR FATAL] No se pudo cargar la configuración: {e}")
+    print("Posible causa: Falta de permisos para crear 'config.json' o carpeta 'config'.")
+    input("Presione ENTER para salir...")
+    sys.exit(1)
 
 # Detecta la IP real del servidor en la red local
 def obtener_ip_real():
@@ -63,4 +66,8 @@ def enviar_datos():
         time.sleep(AGENTE_INTERVALO)
 
 if __name__ == "__main__":
-    enviar_datos()
+    try:
+        enviar_datos()
+    except Exception as e:
+        print(f"\n[ERROR] El agente se detuvo: {e}")
+        input("Presione ENTER para salir...")

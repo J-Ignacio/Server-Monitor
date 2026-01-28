@@ -1,0 +1,23 @@
+{
+    "servidor_central": {
+        "ip": "192.168.1.142",
+        "puerto": 8000,
+        "host": "0.0.0.0"
+    },
+    "agente": {
+        "intervalo_envio": 5,
+        "timeout": 5,
+        "reintentos": 3,
+        "espera_reintento": 5
+    },
+    "dashboard": {
+        "intervalo_actualizacion": 2,
+        "host": "localhost",
+        "puerto": 8501
+    },
+    "sistema": {
+        "debug": false,
+        "logs_habilitados": true,
+        "archivo_log": "logs/sistema.log"
+    }
+}
