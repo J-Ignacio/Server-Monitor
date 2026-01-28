@@ -28,7 +28,7 @@ CONFIG_DIR.mkdir(exist_ok=True)
 # Configuración predeterminada
 CONFIGURACION_PREDETERMINADA = {
     "servidor_central": {
-        "ip": "192.168.1.142",  # <--- IP DE TU PC (Donde corre el Dashboard)
+        "ip": "192.168.4.142",  # <--- IP Actualizada
         "puerto": 8000,
         "host": "0.0.0.0"
     },
