@@ -56,7 +56,7 @@ def enviar_datos():
             else:
                 print(f"✗ Error: {response.status_code}")
                 intentos_fallidos += 1
-                
+
         except requests.exceptions.ConnectTimeout:
             print(f"⚠️ Intento fallido: Timeout. El servidor no responde. (Revisa el Firewall en {URL_REPORTAR.split('/')[2]})")
             intentos_fallidos += 1

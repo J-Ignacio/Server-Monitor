@@ -1,4 +1,4 @@
-# 📌 Referencia Rápida
+# ⚡ Referencia Rápida (Cheat Sheet)
 
 ## Ejecución (Lo Más Importante)
 

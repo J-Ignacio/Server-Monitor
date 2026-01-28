@@ -1,4 +1,4 @@
-# 🏗️ Arquitectura
+# 🏗️ Arquitectura y Flujo de Datos
 
 ## Diagrama de Flujo
 

@@ -1,4 +1,4 @@
-# ✅ Cambios Realizados
+# 📝 Registro de Cambios (Changelog)
 
 ## 📝 Código Python - Comentarios Añadidos
 

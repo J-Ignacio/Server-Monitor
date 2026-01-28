@@ -1,4 +1,4 @@
-# 📦 Componentes del Sistema
+# 📦 Componentes Técnicos y Ejecutables
 
 ## 🚀 Ejecutables
 
@@ -48,9 +48,13 @@ Función:
 - **Nota**: Temperatura no capturada (no disponible en versión actual)
 
 Configuración:
+
 ```python
 IP_CENTRAL = "192.168.4.143"  # Cambiar con IP de laptop NOC
 ```
+- **Automática:** Detecta su propia IP al iniciar.
+- **Destino:** Lee `src/config.py` (o `config.json` si existe).
+- **IP Servidor:** Se define en `CONFIGURACION_PREDETERMINADA["servidor_central"]["ip"]`.
 
 Salida:
 ```

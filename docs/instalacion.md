@@ -1,4 +1,4 @@
-# 🛠️ Instalación
+# 🛠️ Guía de Instalación Paso a Paso
 
 ## Central (Laptop NOC)
 

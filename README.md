@@ -1,4 +1,4 @@
-# 🖥️ Sistema de Monitoreo de Servidores NOC
+# 🏠 Inicio - Sistema de Monitoreo NOC
 
 Monitoreo en tiempo real de CPU, RAM de múltiples servidores en red local.
 
@@ -51,10 +51,10 @@ streamlit run src/dashboard.py
 
 ## 📚 Documentación
 
-- [📖 Instalación Completa](./docs/instalacion.md)
-- [⚙️ Componentes Técnicos](./docs/COMPONENTES.md)
-- [🏗️ Arquitectura del Sistema](./docs/arquitectura.md)
-- [📤 Compartir a Otra PC](./docs/COMPARTIR_PROYECTO.md)
+- [📖 Guía de Instalación Paso a Paso](./docs/instalacion.md)
+- [⚙️ Componentes Técnicos y Ejecutables](./docs/COMPONENTES.md)
+- [🏗️ Arquitectura y Flujo de Datos](./docs/arquitectura.md)
+- [📘 Guía de Despliegue y Solución de Problemas](./docs/COMPARTIR_PROYECTO.md)
 
 ## ⚙️ Requisitos
 
