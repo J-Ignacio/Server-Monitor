@@ -15,6 +15,19 @@ class Metricas(BaseModel):
 # Almacenamiento en memoria (última medición de cada servidor)
 base_datos = {}
 
+# Evento de inicio: Muestra información en la consola al arrancar con uvicorn
+@app.on_event("startup")
+async def startup_event():
+    print(f"\n🚀 Sistema de Monitoreo - Servidor Central")
+    print(f"📡 Escuchando en: {SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}")
+    print(f"📊 Estado: http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado")
+    print(f"📄 Docs:   http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/docs\n")
+
+# Ruta raíz para verificar fácilmente si el servidor está vivo
+@app.get("/")
+def root():
+    return {"sistema": "NOC Monitor", "estado": "Online", "versión": "1.0"}
+
 # GET: Retorna el estado actual de todos los servidores
 @app.get("/estado")
 async def obtener_estado():
@@ -36,10 +49,5 @@ def recibir_metricas(datos: Metricas):
     return {"status": "ok"}
 
 if __name__ == "__main__":
-    print(f"\n🚀 Sistema de Monitoreo - Servidor Central")
-    print(f"📡 Escuchando en: {SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}")
-    print(f"📊 Estado: http://{SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}/estado")
-    print(f"📤 Reportar: http://{SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}/reportar\n")
-    
     import uvicorn
     uvicorn.run(app, host=SERVIDOR_CENTRAL_HOST, port=SERVIDOR_CENTRAL_PUERTO)
