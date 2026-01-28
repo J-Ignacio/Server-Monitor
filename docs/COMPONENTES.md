@@ -25,7 +25,7 @@ Generado con PyInstaller desde `src/agente.py`
 
 Uso:
 ```bash
-# Doble clic en AGENTE_FINAL.exe
+# Doble clic en AGENTE_FINAL.exe (en cualquier PC de la red)
 # O crear config.bat para configurar IP_CENTRAL
 ```
 

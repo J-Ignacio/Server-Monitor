@@ -61,6 +61,7 @@
    - Problemas potenciales al compartir
    - Qué carpetas NO incluir (venv, build, dist)
    - Paso a paso para otra PC
+   - **Nueva sección:** Guía para distribuir solo el Agente (.exe)
    - Menciona setup.bat
 
 ---

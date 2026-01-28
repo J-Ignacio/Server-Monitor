@@ -1,5 +1,32 @@
 # 📤 Compartir el Proyecto a Otra PC
 
+## 🚀 Opción Rápida: Solo Agentes (Para Monitorear)
+
+Si solo quieres **monitorear otras PCs** (no desarrollar en ellas), no necesitas copiar todo el proyecto. Sigue este flujo "Universal":
+
+### 1. Configurar en tu Servidor (Una sola vez)
+1. Abre `src/config.py`.
+2. Busca `CONFIGURACION_PREDETERMINADA`.
+3. Cambia `"ip": "127.0.0.1"` por la **IP Real de tu Servidor** (ej: `192.168.1.50`).
+
+### 2. Generar el Ejecutable
+Ejecuta en tu terminal:
+```bash
+pyinstaller AGENTE_FINAL.spec
+```
+
+### 3. Distribuir
+1. Ve a la carpeta `dist/`.
+2. Copia el archivo `AGENTE_FINAL.exe`.
+3. Pégalo en cualquier PC de tu red (PC2, PC3, PC4...).
+4. **¡Listo!** Al abrirlo, se conectará automáticamente a tu servidor.
+
+---
+
+## 📦 Opción Completa: Mover el Proyecto (Para Desarrollo)
+
+Usa esta opción si quieres mover todo el código fuente a otra PC para seguir programando.
+
 ## ⚠️ Problemas Potenciales
 
 ### 1. **El `venv/` (Ambiente Virtual)**
