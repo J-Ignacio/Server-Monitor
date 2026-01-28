@@ -57,11 +57,17 @@ def enviar_datos():
                 print(f"✗ Error: {response.status_code}")
                 intentos_fallidos += 1
                 
-        except Exception as e:
+        except requests.exceptions.ConnectTimeout:
+            print(f"⚠️ Intento fallido: Timeout. El servidor no responde. (Revisa el Firewall en {URL_REPORTAR.split('/')[2]})")
+            intentos_fallidos += 1
+        except requests.exceptions.ConnectionError:
+            print(f"⚠️ Intento fallido: Error de conexión. ¿Está el servidor encendido y conectado a la red?")
             intentos_fallidos += 1
             if intentos_fallidos >= AGENTE_REINTENTOS:
                 print(f"✗ Sin conexión al servidor (reintentando cada {AGENTE_ESPERA_REINTENTO}s)")
                 intentos_fallidos = 0
+        except Exception as e:
+            print(f"⚠️ Intento fallido: {e}")
             
         time.sleep(AGENTE_INTERVALO)
 
