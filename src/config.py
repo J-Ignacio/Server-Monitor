@@ -4,6 +4,7 @@ Editar este archivo para cambiar la configuración sin tocar el código
 """
 import os
 import json
+import sys
 from pathlib import Path
 
 # Detectar sistema operativo
@@ -11,6 +12,14 @@ SISTEMA_OPERATIVO = "Windows" if os.name == 'nt' else "Linux/Unix"
 
 # Rutas de archivos de configuración
 CONFIG_DIR = Path(__file__).parent.parent / "config"
+if getattr(sys, 'frozen', False):
+    # Si estamos ejecutando como .exe (PyInstaller)
+    BASE_DIR = Path(sys.executable).parent
+else:
+    # Si estamos ejecutando como script .py normal
+    BASE_DIR = Path(__file__).parent.parent
+
+CONFIG_DIR = BASE_DIR / "config"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 # Crear directorio de configuración si no existe
@@ -19,7 +28,7 @@ CONFIG_DIR.mkdir(exist_ok=True)
 # Configuración predeterminada
 CONFIGURACION_PREDETERMINADA = {
     "servidor_central": {
-        "ip": "127.0.0.1",
+        "ip": "192.168.1.XX",  # <--- PON AQUÍ LA IP DE TU NUEVO SERVIDOR
         "puerto": 8000,
         "host": "0.0.0.0"
     },

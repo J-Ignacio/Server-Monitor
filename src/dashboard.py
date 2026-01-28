@@ -2,7 +2,7 @@
 import streamlit as st
 import requests
 import time
-from src.config import URL_ESTADO, DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO
+from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO
 
 # Configurar página
 st.set_page_config(page_title="NOC Monitor", layout="wide")
@@ -14,10 +14,12 @@ placeholder = st.empty()
 def obtener_datos():
     """Obtiene métricas del servidor central"""
     try:
-        response = requests.get(f"http://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/estado", timeout=2)
+        # Usamos 127.0.0.1 (localhost) para asegurar que el dashboard siempre encuentre a la API
+        # independientemente de la IP de la red o si cambiamos de PC.
+        response = requests.get(f"http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado", timeout=2)
         return response.json() if response.status_code == 200 else {}
     except Exception as e:
-        st.warning(f"⚠️  No se puede conectar al servidor: {SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}")
+        st.warning(f"⚠️  No se puede conectar a la API local (Puerto {SERVIDOR_CENTRAL_PUERTO})")
         return {}
 
 # Bucle de actualización (cada DASHBOARD_INTERVALO segundos)
