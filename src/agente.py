@@ -60,7 +60,7 @@ def obtener_temperatura():
         try:
             # Opción B: WMI Estándar (MSAcpi)
             # Devuelve décimas de Kelvin. (K - 273.2) = Celsius
-            w = wmi.WMI()
+            w = wmi.WMI(namespace="root\\wmi")
             temps = w.MSAcpi_ThermalZoneTemperature()
             if temps:
                 kelvin = temps[0].CurrentTemperature
@@ -96,7 +96,7 @@ def enviar_datos():
             response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT)
             
             if response.status_code == 200:
-                print(f"✓ Datos enviados - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}%")
+                print(f"✓ Datos enviados - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}% | Temp: {metricas['temp']}°C")
                 intentos_fallidos = 0
             else:
                 print(f"✗ Error: {response.status_code}")
