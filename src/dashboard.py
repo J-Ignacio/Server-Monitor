@@ -6,6 +6,40 @@ from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO
 
 # Configurar página
 st.set_page_config(page_title="NOC Monitor", layout="wide")
+
+# --- Configuración de Tema (Sidebar) ---
+with st.sidebar:
+    st.header("🎨 Visualización")
+    tema_oscuro = st.toggle("Modo Oscuro", value=True)
+
+# Inyectar CSS dinámico según el estado del toggle
+if tema_oscuro:
+    custom_css = """
+    <style>
+        .stApp {
+            background-color: #0e1117;
+            color: #fafafa;
+        }
+        [data-testid="stSidebar"] {
+            background-color: #262730;
+        }
+    </style>
+    """
+else:
+    custom_css = """
+    <style>
+        .stApp {
+            background-color: #ffffff;
+            color: #31333f;
+        }
+        [data-testid="stSidebar"] {
+            background-color: #f0f2f6;
+        }
+    </style>
+    """
+
+st.markdown(custom_css, unsafe_allow_html=True)
+
 st.title("🖥️ Sistema de Monitoreo NOC")
 
 # Contenedor que se actualiza dinámicamente
