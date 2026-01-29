@@ -41,7 +41,12 @@ while True:
                             st.metric(label="Memoria RAM", value=f"{info['ram']}%")
                             st.progress(min(info['ram']/100, 1.0))
                         
-                            st.write(f"🌡️ Temperatura: N/A")
+                            temp = info.get('temp', 0.0)
+                            if temp > 0:
+                                st.write(f"🌡️ Temperatura: **{temp:.1f} °C**")
+                            else:
+                                st.write(f"🌡️ Temperatura: N/A")
+                                
                             st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
             else:
                 st.info("Esperando conexión de agentes remotos...")
