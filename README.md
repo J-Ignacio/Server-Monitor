@@ -40,6 +40,7 @@ streamlit run src/dashboard.py
 | Archivo | Descripción |
 |---------|-------------|
 | **setup.bat** | Configuración inicial (primera vez) |
+| **limpiar.bat** | Borra venv y temporales (Factory Reset) |
 | **Iniciar_NOC.bat** | Ejecutar central (API + Dashboard) |
 | **AGENTE_FINAL.exe** | Ejecutable para servidores remotos |
 | `src/agente.py` | Código fuente del agente |
