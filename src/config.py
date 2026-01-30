@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 # Detectar sistema operativo
-SISTEMA_OPERATIVO = "Windows" if os.name == 'nt' else "Linux/Unix"
+SISTEMA_OPERATIVO = "Windows"
 
 # Rutas de archivos de configuración
 CONFIG_DIR = Path(__file__).parent.parent / "config"
