@@ -12,7 +12,7 @@
 
 ### Opción B: Manual (Desarrollo)
 
-```bash
+```powershell
 # 1. Instalar dependencias
 pip install -r requeriments.txt
 
@@ -37,7 +37,7 @@ netsh advfirewall firewall add rule name="NOC Monitor" dir=in action=allow proto
 ### Opción A: Con Ejecutable (Recomendado)
 
 1. **Acceder por RDP al servidor**
-   ```bash
+   ```cmd
    mstsc /v:192.168.1.100
    ```
 
@@ -57,7 +57,7 @@ netsh advfirewall firewall add rule name="NOC Monitor" dir=in action=allow proto
 1. **Copiar `src/agente.py`** al servidor
 
 2. **Instalar dependencias:**
-   ```bash
+   ```powershell
    pip install requests psutil
    ```
 
@@ -67,7 +67,7 @@ netsh advfirewall firewall add rule name="NOC Monitor" dir=in action=allow proto
    ```
 
 4. **Ejecutar:**
-   ```bash
+   ```powershell
    python agente.py
    ```
 

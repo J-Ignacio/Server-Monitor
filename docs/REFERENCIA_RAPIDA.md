@@ -3,14 +3,14 @@
 ## Ejecución (Lo Más Importante)
 
 ### Central
-```bash
+```powershell
 # Doble clic en:
 Iniciar_NOC.bat
 ```
 Se abre API y Dashboard automáticamente.
 
 ### Servidor Remoto
-```bash
+```powershell
 # Doble clic en:
 AGENTE_FINAL.exe
 ```
@@ -88,7 +88,7 @@ set IP_CENTRAL=192.168.4.143  # ← Cambiar con tu IP de laptop
 
 ## Comandos Desarrollo (Si necesitas)
 
-```bash
+```powershell
 # Ver IP local
 ipconfig
 

@@ -12,7 +12,7 @@ Qué hace:
 4. Todo en una sola ejecución
 
 Uso:
-```bash
+```powershell
 # Doble clic en Iniciar_NOC.bat
 ```
 
@@ -24,13 +24,13 @@ Uso:
 Generado con PyInstaller desde `src/agente.py`
 
 Uso:
-```bash
+```powershell
 # Doble clic en AGENTE_FINAL.exe (en cualquier PC de la red)
 # O crear config.bat para configurar IP_CENTRAL
 ```
 
 **Para regenerar .exe:**
-```bash
+```powershell
 pyinstaller AGENTE_FINAL.spec
 ```
 

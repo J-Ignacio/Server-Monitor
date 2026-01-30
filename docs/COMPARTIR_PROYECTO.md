@@ -14,7 +14,7 @@ Si solo quieres **monitorear otras PCs** (no desarrollar en ellas), no necesitas
 
 ### 2. Generar el Ejecutable
 Ejecuta en tu terminal:
-```bash
+```powershell
 pyinstaller AGENTE_FINAL.spec
 ```
 1. **Si cambias la IP en el código:** Debes **BORRAR** el archivo `config/config.json` para que el sistema tome el cambio. Si no lo borras, seguirá usando la configuración vieja.
