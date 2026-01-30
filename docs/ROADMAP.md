@@ -7,6 +7,7 @@ Ideas y mejoras planificadas para futuras versiones del Monitor NOC.
 - [x] **Soporte de Temperatura:** Investigar librerías (`OpenHardwareMonitor` o WMI) para leer temperatura de CPU en Windows.
 - [ ] **Alertas Sonoras:** Reproducir un sonido en el Dashboard cuando la CPU supere el 90%.
 - [x] **Modo Oscuro/Claro:** Toggle en el Dashboard.
+- [🚧] **Modo Oscuro/Claro:** Toggle en el Dashboard (En curso).
 
 ## 🛠️ Mejoras Técnicas (Mediano Plazo)
 

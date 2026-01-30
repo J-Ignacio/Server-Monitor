@@ -9,7 +9,7 @@ st.set_page_config(page_title="NOC Monitor", layout="wide")
 
 # --- Configuración de Tema (Sidebar) ---
 with st.sidebar:
-    st.header("🎨 Visualización")
+    st.header("⚙️ Configuración")
     tema_oscuro = st.toggle("Modo Oscuro", value=True)
 
 # Inyectar CSS dinámico según el estado del toggle
@@ -18,7 +18,15 @@ if tema_oscuro:
     <style>
         .stApp {
             background-color: #0e1117;
-            color: #fafafa;
+            color: #ffffff;
+        }
+        /* Forzar blanco puro en headers, textos, métricas y títulos de expanders */
+        h1, h2, h3, p, .stMarkdown, [data-testid="stMetricValue"], [data-testid="stMetricLabel"], 
+        [data-testid="stExpander"] summary,
+        [data-testid="stExpander"] summary * {
+            color: #ffffff !important;
+            fill: #ffffff !important;
+            stroke: #ffffff !important;
         }
         [data-testid="stSidebar"] {
             background-color: #262730;
