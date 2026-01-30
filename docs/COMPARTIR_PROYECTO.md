@@ -72,7 +72,7 @@ El `.gitignore` ya excluye estas carpetas automáticamente.
 **Comprimir sin las carpetas innecesarias:**
 ### 2. Generar Ejecutable
 Ejecuta en tu terminal:
-```bash
+```powershell
 # Opción A: Usando 7-Zip/WinRAR
 # Click derecho → Agregar al archivo
 # Marcar "Excluir carpetas": venv/, build/, dist/, __pycache__/, .git/
@@ -89,24 +89,24 @@ Compress-Archive -Path . -DestinationPath Monitor_Servidores.zip -Exclude @("ven
 3. Ejecuta el `.exe`.
 
 **Paso 1: Extraer archivo**
-```bash
+```powershell
 Extract-Archive Monitor_Servidores.zip
 cd Monitor_Servidores
 ```
 
 **Paso 2: Crear nuevo venv**
-```bash
+```powershell
 python -m venv venv
 venv\Scripts\activate
 ```
 
 **Paso 3: Instalar dependencias**
-```bash
+```powershell
 pip install -r requeriments.txt
 ```
 
 **Paso 4: Ejecutar**
-```bash
+```powershell
 # Opción A: Doble clic en Iniciar_NOC.bat
 Iniciar_NOC.bat
 

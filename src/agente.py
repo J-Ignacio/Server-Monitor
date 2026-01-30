@@ -43,7 +43,7 @@ print(f"⏱️  Intervalo de envío: {AGENTE_INTERVALO}s")
 print(f"🌡️  Soporte Temperatura: {'ACTIVO (WMI)' if wmi else 'INACTIVO (Librería wmi no encontrada)'}")
 
 def obtener_temperatura():
-    """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM y Linux)"""
+    """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM)"""
     # 1. Estrategia Windows: WMI
     if wmi:
         try:
@@ -69,7 +69,7 @@ def obtener_temperatura():
         except:
             pass
 
-    # 2. Estrategia Linux/General: psutil
+    # 2. Estrategia General: psutil
     try:
         temps = psutil.sensors_temperatures()
         if temps:
