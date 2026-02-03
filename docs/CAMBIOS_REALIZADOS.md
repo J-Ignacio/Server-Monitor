@@ -17,6 +17,22 @@
 - Comentarios claros en estructura
 - Docstring en función obtener_datos()
 
+### `src/config.py`
+- Definición de ruta para base de datos SQLite (`data/metricas.db`)
+
+---
+
+## 💾 Persistencia y Visualización (Nuevo)
+
+### Base de Datos SQLite
+- Reemplazo del almacenamiento volátil (RAM) por persistente (`metricas.db`).
+- Historial de métricas conservado tras reinicios.
+- Nuevo endpoint `/historial/{id}` en la API para consultar datos pasados.
+
+### Gráficos Históricos
+- Dashboard ahora muestra la evolución de la CPU en el tiempo.
+- Uso de `pandas` para procesar series temporales.
+
 ---
 
 ## � Scripts Batch Creados

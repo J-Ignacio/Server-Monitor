@@ -72,6 +72,7 @@ Endpoints:
 | Método | Ruta | Función |
 |--------|------|---------|
 | GET | `/estado` | Retorna métricas de todos los servidores |
+| GET | `/historial/{id}` | Retorna historial de métricas (últimos 50) |
 | POST | `/reportar` | Recibe métricas de un agente |
 
 **GET /estado - Response:**
@@ -103,6 +104,7 @@ Puerto: `8000`
 Características:
 - Muestra un recuadro por cada servidor
 - Barras de progreso visuales
+- **Gráfico histórico:** Línea de tiempo de uso de CPU
 - Actualización cada 2 segundos
 - Timestamp de última actualización
 
@@ -137,7 +139,7 @@ Puerto: `8501`
 - `ID_SERVIDOR`: "hostname (IP.local)"
 
 ### Servidor
-- `base_datos`: Diccionario {servidor: {cpu, ram, temp}}
+- `DB_FILE`: Ruta al archivo `data/metricas.db` (SQLite)
 
 ### Dashboard
 - `placeholder`: Contenedor que se refresca cada 2s

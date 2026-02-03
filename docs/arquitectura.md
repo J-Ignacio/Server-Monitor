@@ -11,7 +11,7 @@
          │ POST /reportar             │                            │
          │ {cpu, ram}                 │                            │
          ├───────────────────────────>│                            │
-         │                       Almacena                          │
+         │                    Guarda en DB (SQLite)                │
          │                            │                            │
          │                            │<───── GET /estado ─────────│
          │                            │                            │
@@ -35,7 +35,8 @@
 - Dos endpoints:
   - `POST /reportar`: recibe métricas (válida con Pydantic)
   - `GET /estado`: retorna dict con última medición
-- Almacenamiento: diccionario en memoria
+  - `GET /historial/{id}`: retorna lista de métricas pasadas
+- Almacenamiento: **Base de datos SQLite** (`data/metricas.db`)
 - Puerto: 8000
 
 ### 3. Dashboard (`dashboard.py`)
@@ -93,10 +94,9 @@ Host: localhost:8000
 
 ## Limitaciones
 
-- **Almacenamiento**: En memoria (se pierden datos al reiniciar)
 - **Temperatura**: ❌ No disponible en versión actual (requiere drivers específicos y acceso administrativo)
 - **Escala**: ~100 servidores máximo
-- **Persistencia**: Implementar base de datos si se requiere histórico
+- **Base de Datos**: SQLite (archivo local), no apto para miles de escrituras concurrentes por segundo.
 
 ## Despliegue (RDP)
 
