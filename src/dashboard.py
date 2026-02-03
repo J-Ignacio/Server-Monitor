@@ -100,7 +100,9 @@ while True:
                                     datos_hist = resp.json()
                                     if datos_hist:
                                         df = pd.DataFrame(datos_hist)
-                                        st.line_chart(df["cpu"], height=150)
+                                        # Convertir timestamp a fecha/hora para el eje X
+                                        df["timestamp"] = pd.to_datetime(df["timestamp"])
+                                        st.line_chart(df.set_index("timestamp")["cpu"], height=150)
                             except Exception:
                                 st.caption("Cargando historial...")
             else:

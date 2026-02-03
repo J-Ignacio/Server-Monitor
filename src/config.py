@@ -25,6 +25,11 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 # Crear directorio de configuración si no existe
 CONFIG_DIR.mkdir(exist_ok=True)
 
+# Configuración de Base de Datos
+DATA_DIR = BASE_DIR / "data"
+DATA_DIR.mkdir(exist_ok=True)
+DB_FILE = DATA_DIR / "metricas.db"
+
 # Configuración predeterminada
 CONFIGURACION_PREDETERMINADA = {
     "servidor_central": {
