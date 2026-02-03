@@ -80,6 +80,25 @@ async def reportar_metricas(metricas: Metricas):
         if DEBUG: print(f"Error BD: {e}")
         raise HTTPException(status_code=500, detail="Error al guardar métricas")
 
+# GET: Retorna el historial de métricas de un servidor (para gráficos)
+@app.get("/historial/{id_servidor}")
+async def obtener_historial(id_servidor: str):
+    conn = sqlite3.connect(str(DB_FILE))
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Obtenemos los últimos 50 registros
+    cursor.execute('''
+        SELECT cpu, ram, timestamp FROM metricas 
+        WHERE id_servidor = ? 
+        ORDER BY id DESC LIMIT 50
+    ''', (id_servidor,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Invertimos la lista para que el gráfico vaya de izquierda (viejo) a derecha (nuevo)
+    return [dict(row) for row in rows][::-1]
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=SERVIDOR_CENTRAL_HOST, port=SERVIDOR_CENTRAL_PUERTO)

@@ -2,6 +2,7 @@
 import streamlit as st
 import requests
 import time
+import pandas as pd
 from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO
 
 # Configurar página
@@ -90,6 +91,18 @@ while True:
                                 st.write(f"🌡️ Temperatura: N/A")
                                 
                             st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
+                            
+                            # --- Gráfico Histórico ---
+                            try:
+                                url_hist = f"http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
+                                resp = requests.get(url_hist, timeout=1)
+                                if resp.status_code == 200:
+                                    datos_hist = resp.json()
+                                    if datos_hist:
+                                        df = pd.DataFrame(datos_hist)
+                                        st.line_chart(df["cpu"], height=150)
+                            except Exception:
+                                st.caption("Cargando historial...")
             else:
                 st.info("Esperando conexión de agentes remotos...")
     except KeyboardInterrupt:
