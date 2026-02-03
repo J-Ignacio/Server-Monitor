@@ -28,7 +28,7 @@ CONFIG_DIR.mkdir(exist_ok=True)
 # Configuración predeterminada
 CONFIGURACION_PREDETERMINADA = {
     "servidor_central": {
-        "ip": "192.168.4.146",  # <--- IP Actualizada
+        "ip": "192.168.4.175",  # <--- IP Actualizada
         "puerto": 8000,
         "host": "0.0.0.0"
     },
