@@ -1,7 +1,8 @@
 """API FastAPI: recibe y almacena métricas de agentes remotos"""
-from fastapi import FastAPI
+import sqlite3
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG
+from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB_FILE
 
 app = FastAPI()
 
@@ -12,12 +13,28 @@ class Metricas(BaseModel):
     ram: float         # % de memoria RAM
     temp: float        # Temperatura
 
-# Almacenamiento en memoria (última medición de cada servidor)
-base_datos = {}
+# --- Funciones de Base de Datos ---
+def init_db():
+    """Inicializa la base de datos SQLite si no existe"""
+    conn = sqlite3.connect(str(DB_FILE))
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS metricas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            id_servidor TEXT,
+            cpu REAL,
+            ram REAL,
+            temp REAL
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 # Evento de inicio: Muestra información en la consola al arrancar con uvicorn
 @app.on_event("startup")
 async def startup_event():
+    init_db()
     print(f"\n🚀 Sistema de Monitoreo - Servidor Central")
     print(f"📡 Escuchando en: {SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}")
     print(f"📊 Estado: http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado")
@@ -32,21 +49,36 @@ def root():
 @app.get("/estado")
 async def obtener_estado():
     """Retorna métricas de todos los servidores monitoreados"""
-    if DEBUG:
-        print(f"📊 Solicitud de estado - Total servidores: {len(base_datos)}")
-    return base_datos
+    conn = sqlite3.connect(str(DB_FILE))
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Obtener la última métrica de cada servidor
+    cursor.execute('''
+        SELECT id_servidor, cpu, ram, temp, timestamp 
+        FROM metricas 
+        WHERE id IN (SELECT MAX(id) FROM metricas GROUP BY id_servidor)
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return {row["id_servidor"]: dict(row) for row in rows}
 
-# POST: Recibe y guarda métricas de un agente
+# POST: Recibe métricas de un agente y las guarda en BD
 @app.post("/reportar")
-def recibir_metricas(datos: Metricas):
-    """Almacena métricas enviadas por un agente"""
-    base_datos[datos.id_servidor] = {
-        "cpu": datos.cpu,
-        "ram": datos.ram,
-        "temp": datos.temp
-    }
-    print(f"✅ [{datos.id_servidor}] CPU: {datos.cpu}% | RAM: {datos.ram}%")
-    return {"status": "ok"}
+async def reportar_metricas(metricas: Metricas):
+    try:
+        conn = sqlite3.connect(str(DB_FILE))
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO metricas (id_servidor, cpu, ram, temp) VALUES (?, ?, ?, ?)",
+                       (metricas.id_servidor, metricas.cpu, metricas.ram, metricas.temp))
+        conn.commit()
+        conn.close()
+        print(f"✅ [{metricas.id_servidor}] CPU: {metricas.cpu}% | RAM: {metricas.ram}%")
+        return {"mensaje": "Métricas guardadas"}
+    except Exception as e:
+        if DEBUG: print(f"Error BD: {e}")
+        raise HTTPException(status_code=500, detail="Error al guardar métricas")
 
 if __name__ == "__main__":
     import uvicorn
