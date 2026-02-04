@@ -21,13 +21,14 @@ if tema_oscuro:
             background-color: #0e1117;
             color: #ffffff;
         }
-        /* Forzar blanco puro en headers, textos, métricas y títulos de expanders */
+        /* Headers, textos y métricas */
         h1, h2, h3, p, .stMarkdown, [data-testid="stMetricValue"], [data-testid="stMetricLabel"], 
-        [data-testid="stExpander"] summary,
-        [data-testid="stExpander"] summary * {
+        [data-testid="stExpander"] summary {
             color: #ffffff !important;
+        }
+        /* Iconos SVG específicos (ej. flecha expander) */
+        [data-testid="stExpander"] summary svg {
             fill: #ffffff !important;
-            stroke: #ffffff !important;
         }
         [data-testid="stSidebar"] {
             background-color: #262730;
