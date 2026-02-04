@@ -3,6 +3,8 @@ import streamlit as st
 import requests
 import time
 import pandas as pd
+import os
+import base64
 from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO
 
 # Configurar página
@@ -82,8 +84,13 @@ while True:
             if base_datos:
                 # Crear columnas dinámicas por servidor
                 cols = st.columns(len(base_datos))
+                alerta_critica = False
             
                 for i, (servidor, info) in enumerate(base_datos.items()):
+                    # Verificar umbral de alerta (> 90%)
+                    if info['cpu'] > 90:
+                        alerta_critica = True
+
                     with cols[i]:
                         with st.expander(f"🖥️ {servidor}", expanded=True):
                             st.metric(label="CPU", value=f"{info['cpu']}%")
@@ -113,6 +120,19 @@ while True:
                                         st.line_chart(df.set_index("timestamp")["cpu"], height=150)
                             except Exception:
                                 st.caption("Cargando historial...")
+                
+                # --- Trigger de Alerta (Audio + Visual) ---
+                if alerta_critica:
+                    st.error("🔥 ¡ALERTA CRÍTICA! Uso de CPU superior al 90% detectado.")
+                    sound_file = "alert.mp3"
+                    if os.path.exists(sound_file):
+                        try:
+                            with open(sound_file, "rb") as f:
+                                data = f.read()
+                                b64 = base64.b64encode(data).decode()
+                                st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+                        except Exception:
+                            pass
             else:
                 st.info("Esperando conexión de agentes remotos...")
     except KeyboardInterrupt:
