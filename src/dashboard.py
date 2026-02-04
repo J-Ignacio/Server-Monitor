@@ -22,9 +22,16 @@ if tema_oscuro:
             color: #ffffff;
         }
         /* Headers, textos y métricas */
-        h1, h2, h3, p, .stMarkdown, [data-testid="stMetricValue"], [data-testid="stMetricLabel"], 
+        h1, h2, h3, p, .stMarkdown, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
+            color: #ffffff !important;
+        }
+        /* Expander: Fondo oscuro para evitar texto invisible sobre fondo blanco por defecto */
         [data-testid="stExpander"] summary {
             color: #ffffff !important;
+            background-color: #262730 !important;
+        }
+        [data-testid="stExpander"] summary:hover {
+            background-color: #404040 !important;
         }
         /* Iconos SVG específicos (ej. flecha expander) */
         [data-testid="stExpander"] summary svg {
