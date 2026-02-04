@@ -82,11 +82,14 @@ while True:
         
         with placeholder.container():
             if base_datos:
+                # Ordenar servidores alfabéticamente para mantener posición fija
+                items_ordenados = sorted(base_datos.items())
+
                 # Crear columnas dinámicas por servidor
-                cols = st.columns(len(base_datos))
+                cols = st.columns(len(items_ordenados))
                 alerta_critica = False
             
-                for i, (servidor, info) in enumerate(base_datos.items()):
+                for i, (servidor, info) in enumerate(items_ordenados):
                     # Verificar umbral de alerta (> 90%)
                     if info['cpu'] > 90:
                         alerta_critica = True
