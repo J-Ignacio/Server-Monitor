@@ -143,5 +143,25 @@ def enviar_datos():
                 time.sleep(AGENTE_ESPERA_REINTENTO)
         
         time.sleep(AGENTE_INTERVALO)
-        
+
 ```
+
+- Métrica de CPU: psutil.cpu_percent(interval=1) es vital. Si el intervalo fuera 0, la métrica sería un pico instantáneo sin valor estadístico. Un segundo permite promediar los ciclos de los hilos de ejecución.
+
+- Gestión de Red: Se capturan excepciones específicas de requests. Esto evita que el agente colapse ante micro-cortes de internet o reinicios programados del servidor central.
+
+### 5. Punto de Entrada del Script
+
+Protección del flujo de ejecución principal.
+
+```
+if __name__ == "__main__":
+    try:
+        enviar_datos()
+    except Exception as e:
+        # Captura cualquier error no controlado para evitar cierre súbito de terminal
+        print(f"\n[ERROR CRÍTICO] El agente se detuvo: {e}")
+        input("Presione ENTER para salir...")
+```
+
+- Finalidad: El bloque if __name__ == "__main__": previene que el agente comience a recolectar datos si el archivo es importado accidentalmente por otro script. El input() final es una cortesía para usuarios de Windows, permitiéndoles leer el error antes de que la ventana de consola desaparezca
