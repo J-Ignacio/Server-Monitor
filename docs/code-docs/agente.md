@@ -33,9 +33,9 @@ except Exception as e:
     sys.exit(1)
 ```
 
-- Análisis de Seguridad: El uso de sys.exit(1) garantiza que el programa no entre en un estado inconsistente si faltan variables críticas. El código 1 indica una salida por error.
+- Análisis de Seguridad: El uso de `sys.exit(1)` garantiza que el programa no entre en un estado inconsistente si faltan variables críticas. El código `1` indica una salida por error.
 
-- Abstracción de SO: El bloque try/except de la librería wmi permite que el agente sea agnóstico al sistema operativo, evitando errores de "Módulo no encontrado" en entornos Linux/Unix.
+- Abstracción de SO: El bloque `try/except` de la librería `wmi` permite que el agente sea agnóstico al sistema operativo, evitando errores de "Módulo no encontrado" en entornos Linux/Unix.
 
 ### 2. Algoritmo de Identificación de Red
 
@@ -58,9 +58,9 @@ def obtener_ip_real():
 hostname = socket.gethostname()
 ID_SERVIDOR = f"{hostname} ({obtener_ip_real()})"
 ```
-- Eficiencia Técnica: Se utiliza el protocolo UDP (SOCK_DGRAM) porque es más rápido y no requiere un apretón de manos (handshake) completo para determinar la ruta de salida.
+- Eficiencia Técnica: Se utiliza el protocolo UDP (`SOCK_DGRAM`) porque es más rápido y no requiere un apretón de manos (handshake) completo para determinar la ruta de salida.
 
-- Contexto de Identidad: El ID_SERVIDOR combina el nombre de red del equipo con su IP actual, lo que facilita el filtrado en bases de datos si el servidor tiene múltiples interfaces.
+- Contexto de Identidad: El `ID_SERVIDOR` combina el nombre de red del equipo con su IP actual, lo que facilita el filtrado en bases de datos si el servidor tiene múltiples interfaces.
 
 ### 3. Jerarquía de Sensores Térmicos
 
@@ -103,9 +103,9 @@ def obtener_temperatura():
     return 0.0
 ```
 
-- Lógica de Negocio: Se prioriza el Método 1 sobre el 2 porque MSAcpi a menudo reporta valores estáticos si el fabricante de la BIOS no expone correctamente las zonas térmicas.
+- Lógica de Negocio: Se prioriza el Método 1 sobre el 2 porque `MSAcpi` a menudo reporta valores estáticos si el fabricante de la BIOS no expone correctamente las zonas térmicas.
 
-- Matemática de Precisión: El cálculo (K - 2732) / 10.0 es fundamental ya que los sensores térmicos bajo el estándar ACPI suelen devolver valores en $10^{-1}$ Kelvin.
+- Matemática de Precisión: El cálculo `(K - 2732) / 10.0` es fundamental ya que los sensores térmicos bajo el estándar ACPI suelen devolver valores en $10^{-1}$ Kelvin.
 
 ### 4. Bucle de Telemetría y Resiliencia de Red
 
@@ -146,9 +146,9 @@ def enviar_datos():
 
 ```
 
-- Métrica de CPU: psutil.cpu_percent(interval=1) es vital. Si el intervalo fuera 0, la métrica sería un pico instantáneo sin valor estadístico. Un segundo permite promediar los ciclos de los hilos de ejecución.
+- Métrica de CPU: `psutil.cpu_percent(interval=1)` es vital. Si el intervalo fuera 0, la métrica sería un pico instantáneo sin valor estadístico. Un segundo permite promediar los ciclos de los hilos de ejecución.
 
-- Gestión de Red: Se capturan excepciones específicas de requests. Esto evita que el agente colapse ante micro-cortes de internet o reinicios programados del servidor central.
+- Gestión de Red: Se capturan excepciones específicas de `requests`. Esto evita que el agente colapse ante micro-cortes de internet o reinicios programados del servidor central.
 
 ### 5. Punto de Entrada del Script
 
@@ -164,4 +164,4 @@ if __name__ == "__main__":
         input("Presione ENTER para salir...")
 ```
 
-- Finalidad: El bloque if __name__ == "__main__": previene que el agente comience a recolectar datos si el archivo es importado accidentalmente por otro script. El input() final es una cortesía para usuarios de Windows, permitiéndoles leer el error antes de que la ventana de consola desaparezca
+- Finalidad: El bloque `if __name__ == "__main__":` previene que el agente comience a recolectar datos si el archivo es importado accidentalmente por otro script. `El input()` final es una cortesía para usuarios de Windows, permitiéndoles leer el error antes de que la ventana de consola desaparezca
