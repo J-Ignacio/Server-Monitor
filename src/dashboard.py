@@ -120,7 +120,8 @@ while True:
                                         df = pd.DataFrame(datos_hist)
                                         # Convertir timestamp a fecha/hora para el eje X
                                         df["timestamp"] = pd.to_datetime(df["timestamp"])
-                                        st.line_chart(df.set_index("timestamp")["cpu"], height=150)
+                                        # Graficar CPU y RAM para ver la tendencia de la última hora
+                                        st.line_chart(df.set_index("timestamp")[["cpu", "ram"]], height=200)
                             except Exception:
                                 st.caption("Cargando historial...")
                 

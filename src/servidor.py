@@ -87,17 +87,17 @@ async def obtener_historial(id_servidor: str):
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # Obtenemos los últimos 50 registros
+    # Obtenemos registros de la última hora
     cursor.execute('''
         SELECT cpu, ram, timestamp FROM metricas 
         WHERE id_servidor = ? 
-        ORDER BY id DESC LIMIT 50
+        AND timestamp >= datetime('now', '-1 hour')
+        ORDER BY timestamp ASC
     ''', (id_servidor,))
     rows = cursor.fetchall()
     conn.close()
     
-    # Invertimos la lista para que el gráfico vaya de izquierda (viejo) a derecha (nuevo)
-    return [dict(row) for row in rows][::-1]
+    return [dict(row) for row in rows]
 
 if __name__ == "__main__":
     import uvicorn
