@@ -1,8 +1,12 @@
 """API FastAPI: recibe y almacena métricas de agentes remotos"""
 import sqlite3
+import asyncio
+import smtplib
+from email.message import EmailMessage
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB_FILE
+from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB_FILE, EMAIL_CONFIG
 
 app = FastAPI()
 
@@ -31,10 +35,67 @@ def init_db():
     conn.commit()
     conn.close()
 
+# --- Sistema de Alertas (Heartbeat) ---
+alertas_activas = {} # Cache para no repetir alertas: { "id_servidor": True/False }
+
+def enviar_correo(asunto, cuerpo):
+    """Envía un correo electrónico usando la configuración SMTP"""
+    if not EMAIL_CONFIG["habilitado"]: return
+
+    msg = EmailMessage()
+    msg.set_content(cuerpo)
+    msg["Subject"] = asunto
+    msg["From"] = EMAIL_CONFIG["usuario"]
+    msg["To"] = EMAIL_CONFIG["destinatario"]
+
+    try:
+        server = smtplib.SMTP(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
+        server.starttls()
+        server.login(EMAIL_CONFIG["usuario"], EMAIL_CONFIG["password"])
+        server.send_message(msg)
+        server.quit()
+        print(f"📧 Alerta enviada a {EMAIL_CONFIG['destinatario']}")
+    except Exception as e:
+        print(f"❌ Error enviando correo: {e}")
+
+async def monitor_latidos():
+    """Tarea en segundo plano: verifica si los servidores han dejado de reportar"""
+    print("👀 Iniciando monitor de latidos (Heartbeat)...")
+    while True:
+        await asyncio.sleep(60) # Verificar cada 60 segundos
+        try:
+            conn = sqlite3.connect(str(DB_FILE))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            # Obtener la última fecha de reporte de cada servidor
+            cursor.execute('SELECT id_servidor, MAX(timestamp) as ultimo FROM metricas GROUP BY id_servidor')
+            rows = cursor.fetchall()
+            conn.close()
+
+            ahora = datetime.utcnow()
+            for row in rows:
+                srv = row["id_servidor"]
+                ultimo = datetime.strptime(row["ultimo"], "%Y-%m-%d %H:%M:%S")
+                delta = (ahora - ultimo).total_seconds()
+
+                if delta > 300: # 5 minutos sin señal
+                    if not alertas_activas.get(srv, False):
+                        print(f"⚠️ ALERTA: {srv} no responde hace {int(delta)}s")
+                        enviar_correo(f"🚨 ALERTA: {srv} Caído", f"El servidor {srv} dejó de reportar hace más de 5 minutos.\nÚltimo reporte: {row['ultimo']} UTC")
+                        alertas_activas[srv] = True
+                else:
+                    if alertas_activas.get(srv, False):
+                        print(f"✅ RECUPERADO: {srv}")
+                        enviar_correo(f"✅ RECUPERADO: {srv}", f"El servidor {srv} ha vuelto a reportar.")
+                        alertas_activas[srv] = False
+        except Exception as e:
+            print(f"Error en monitor: {e}")
+
 # Evento de inicio: Muestra información en la consola al arrancar con uvicorn
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    asyncio.create_task(monitor_latidos())
     print(f"\n🚀 Sistema de Monitoreo - Servidor Central")
     print(f"📡 Escuchando en: {SERVIDOR_CENTRAL_HOST}:{SERVIDOR_CENTRAL_PUERTO}")
     print(f"📊 Estado: http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado")

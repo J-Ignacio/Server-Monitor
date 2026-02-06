@@ -11,7 +11,6 @@ from pathlib import Path
 SISTEMA_OPERATIVO = "Windows"
 
 # Rutas de archivos de configuración
-CONFIG_DIR = Path(__file__).parent.parent / "config"
 if getattr(sys, 'frozen', False):
     # Si estamos ejecutando como .exe (PyInstaller)
     BASE_DIR = Path(sys.executable).parent
@@ -52,6 +51,14 @@ CONFIGURACION_PREDETERMINADA = {
         "debug": False,
         "logs_habilitados": True,
         "archivo_log": "logs/sistema.log"
+    },
+    "email": {
+        "habilitado": False,
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "usuario": "tu_correo@gmail.com",
+        "password": "tu_contraseña_de_aplicacion",
+        "destinatario": "admin@empresa.com"
     }
 }
 
@@ -82,6 +89,11 @@ def guardar_config(config):
 # Cargar configuración al importar
 CONFIG = cargar_config()
 
+# Parche de compatibilidad: Si config.json es viejo y no tiene email, agregarlo
+if "email" not in CONFIG:
+    CONFIG["email"] = CONFIGURACION_PREDETERMINADA["email"]
+    guardar_config(CONFIG)
+
 # Variables de configuración para acceso rápido
 SERVIDOR_CENTRAL_IP = CONFIG["servidor_central"]["ip"]
 SERVIDOR_CENTRAL_PUERTO = CONFIG["servidor_central"]["puerto"]
@@ -99,6 +111,8 @@ DASHBOARD_PUERTO = CONFIG["dashboard"]["puerto"]
 DEBUG = CONFIG["sistema"]["debug"]
 LOGS_HABILITADOS = CONFIG["sistema"]["logs_habilitados"]
 ARCHIVO_LOG = CONFIG["sistema"]["archivo_log"]
+
+EMAIL_CONFIG = CONFIG["email"]
 
 # URL completa del servidor central
 URL_REPORTAR = f"http://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/reportar"
