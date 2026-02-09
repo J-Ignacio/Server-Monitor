@@ -24,8 +24,8 @@
         "habilitado": true,
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
-        "usuario": "TU_CORREO@gmail.com",
-        "password": "TU_CONTRASEÑA_DE_APLICACION",
-        "destinatario": "CORREO_DESTINO@empresa.com"
+        "usuario": "jignaciochavezleiva@gmail.com",
+        "password": "kwfcdprgncrsqerm",
+        "destinatario": "jignaciochavezleiva@gmail.com"
     }
 }

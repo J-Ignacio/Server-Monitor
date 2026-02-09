@@ -81,12 +81,14 @@ async def monitor_latidos():
                 if delta > 300: # 5 minutos sin señal
                     if not alertas_activas.get(srv, False):
                         print(f"⚠️ ALERTA: {srv} no responde hace {int(delta)}s")
-                        enviar_correo(f"🚨 ALERTA: {srv} Caído", f"El servidor {srv} dejó de reportar hace más de 5 minutos.\nÚltimo reporte: {row['ultimo']} UTC")
+                        loop = asyncio.get_running_loop()
+                        await loop.run_in_executor(None, enviar_correo, f"🚨 ALERTA: {srv} Caído", f"El servidor {srv} dejó de reportar hace más de 5 minutos.\nÚltimo reporte: {row['ultimo']} UTC")
                         alertas_activas[srv] = True
                 else:
                     if alertas_activas.get(srv, False):
                         print(f"✅ RECUPERADO: {srv}")
-                        enviar_correo(f"✅ RECUPERADO: {srv}", f"El servidor {srv} ha vuelto a reportar.")
+                        loop = asyncio.get_running_loop()
+                        await loop.run_in_executor(None, enviar_correo, f"✅ RECUPERADO: {srv}", f"El servidor {srv} ha vuelto a reportar.")
                         alertas_activas[srv] = False
         except Exception as e:
             print(f"Error en monitor: {e}")
