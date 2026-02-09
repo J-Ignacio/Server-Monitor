@@ -5,6 +5,7 @@ import time
 import socket
 import sys
 from pathlib import Path
+import urllib3
 
 # Intento de importar WMI para soporte de temperatura en Windows
 try:
@@ -13,7 +14,7 @@ except ImportError:
     wmi = None
 
 try:
-    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO
+    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL
 except Exception as e:
     print(f"\n[ERROR FATAL] No se pudo cargar la configuración: {e}")
     print("Posible causa: Falta de permisos para crear 'config.json' o carpeta 'config'.")
@@ -36,6 +37,10 @@ def obtener_ip_real():
 # Identificador único del servidor (nombre + IP)
 hostname = socket.gethostname()
 ID_SERVIDOR = f"{hostname} ({obtener_ip_real()})"
+
+# Silenciar advertencias de SSL si la verificación está desactivada
+if not VERIFICAR_SSL:
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 print(f"✓ Agente iniciado: {ID_SERVIDOR}")
 print(f"✓ Reportando a: {URL_REPORTAR}")
@@ -93,7 +98,7 @@ def enviar_datos():
                 "temp": obtener_temperatura()               # Temperatura
             }
             
-            response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT)
+            response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT, verify=VERIFICAR_SSL)
             
             if response.status_code == 200:
                 print(f"✓ Datos enviados - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}% | Temp: {metricas['temp']}°C")

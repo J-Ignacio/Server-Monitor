@@ -6,7 +6,7 @@ from email.message import EmailMessage
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB_FILE, EMAIL_CONFIG
+from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB_FILE, EMAIL_CONFIG, USAR_SSL, SSL_CERT, SSL_KEY
 
 app = FastAPI()
 
@@ -164,4 +164,15 @@ async def obtener_historial(id_servidor: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host=SERVIDOR_CENTRAL_HOST, port=SERVIDOR_CENTRAL_PUERTO)
+    
+    if USAR_SSL:
+        if DEBUG: print(f"🔒 Iniciando servidor seguro (HTTPS)")
+        if not SSL_CERT.exists() or not SSL_KEY.exists():
+            print(f"❌ Error: No se encuentran los certificados en: {SSL_CERT.parent}")
+            exit(1)
+            
+        uvicorn.run(app, host=SERVIDOR_CENTRAL_HOST, port=SERVIDOR_CENTRAL_PUERTO, 
+                    ssl_keyfile=str(SSL_KEY), 
+                    ssl_certfile=str(SSL_CERT))
+    else:
+        uvicorn.run(app, host=SERVIDOR_CENTRAL_HOST, port=SERVIDOR_CENTRAL_PUERTO)

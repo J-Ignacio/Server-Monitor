@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import os
 import base64
-from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO
+from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL
 
 # Configurar página
 st.set_page_config(page_title="NOC Monitor", layout="wide")
@@ -69,7 +69,8 @@ def obtener_datos():
     try:
         # Usamos 127.0.0.1 (localhost) para asegurar que el dashboard siempre encuentre a la API
         # independientemente de la IP de la red o si cambiamos de PC.
-        response = requests.get(f"http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado", timeout=2)
+        protocolo = "https" if USAR_SSL else "http"
+        response = requests.get(f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado", timeout=2, verify=VERIFICAR_SSL)
         return response.json() if response.status_code == 200 else {}
     except Exception as e:
         st.warning(f"⚠️  No se puede conectar a la API local (Puerto {SERVIDOR_CENTRAL_PUERTO})")
@@ -112,8 +113,9 @@ while True:
                             
                             # --- Gráfico Histórico ---
                             try:
-                                url_hist = f"http://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
-                                resp = requests.get(url_hist, timeout=1)
+                                protocolo = "https" if USAR_SSL else "http"
+                                url_hist = f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
+                                resp = requests.get(url_hist, timeout=1, verify=VERIFICAR_SSL)
                                 if resp.status_code == 200:
                                     datos_hist = resp.json()
                                     if datos_hist:

@@ -59,6 +59,12 @@ CONFIGURACION_PREDETERMINADA = {
         "usuario": "tu_correo@gmail.com",
         "password": "tu_contraseña_de_aplicacion",
         "destinatario": "admin@empresa.com"
+    },
+    "seguridad": {
+        "usar_ssl": False,
+        "archivo_cert": "certs/cert.pem",
+        "archivo_key": "certs/key.pem",
+        "verificar_ssl": False
     }
 }
 
@@ -114,9 +120,17 @@ ARCHIVO_LOG = CONFIG["sistema"]["archivo_log"]
 
 EMAIL_CONFIG = CONFIG["email"]
 
+# Configuración de Seguridad
+SEGURIDAD = CONFIG.get("seguridad", CONFIGURACION_PREDETERMINADA["seguridad"])
+USAR_SSL = SEGURIDAD.get("usar_ssl", False)
+SSL_CERT = BASE_DIR / SEGURIDAD.get("archivo_cert", "certs/cert.pem")
+SSL_KEY = BASE_DIR / SEGURIDAD.get("archivo_key", "certs/key.pem")
+VERIFICAR_SSL = SEGURIDAD.get("verificar_ssl", False)
+
 # URL completa del servidor central
-URL_REPORTAR = f"http://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/reportar"
-URL_ESTADO = f"http://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/estado"
+PROTOCOLO = "https" if USAR_SSL else "http"
+URL_REPORTAR = f"{PROTOCOLO}://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/reportar"
+URL_ESTADO = f"{PROTOCOLO}://{SERVIDOR_CENTRAL_IP}:{SERVIDOR_CENTRAL_PUERTO}/estado"
 
 if DEBUG:
     print(f"🔧 Modo DEBUG activo")
