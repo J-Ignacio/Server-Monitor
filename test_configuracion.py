@@ -96,7 +96,7 @@ for dep in dependencias:
         print(f"   ✓ {dep}")
     except ImportError:
         print(f"   ✗ {dep} NO instalado")
-        print(f"\n   💡 Ejecuta: pip install -r requeriments.txt")
+        print(f"\n   💡 Ejecuta: pip install -r requirements.txt")
         sys.exit(1)
 
 # 7. Resumen

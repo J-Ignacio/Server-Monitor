@@ -102,7 +102,7 @@ venv\Scripts\activate
 
 **Paso 3: Instalar dependencias**
 ```powershell
-pip install -r requeriments.txt
+pip install -r requirements.txt
 ```
 
 **Paso 4: Ejecutar**
