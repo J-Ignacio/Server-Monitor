@@ -68,20 +68,57 @@ CONFIGURACION_PREDETERMINADA = {
     }
 }
 
+def _fusionar_configs(cargada, predeterminada):
+    """
+    Fusiona recursivamente la configuración predeterminada en la cargada,
+    añadiendo solo las claves que falten sin sobreescribir las existentes.
+    Retorna True si se hizo alguna modificación.
+    """
+    modificado = False
+    for key, value in predeterminada.items():
+        if key not in cargada:
+            cargada[key] = value
+            modificado = True
+        elif isinstance(value, dict) and isinstance(cargada.get(key), dict):
+            if _fusionar_configs(cargada[key], value):
+                modificado = True
+    return modificado
+
 def cargar_config():
-    """Carga la configuración desde el archivo JSON"""
+    """
+    Carga la configuración desde JSON. Si no existe, lo crea.
+    Si está corrupto, lo renombra. Si es antiguo, añade las nuevas claves.
+    """
+    config_cargada = CONFIGURACION_PREDETERMINADA.copy()
     if CONFIG_FILE.exists():
         try:
             with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
+                config_leida = json.load(f)
+            # Fusionar para añadir claves de nuevas versiones sin borrar las antiguas
+            if _fusionar_configs(config_leida, CONFIGURACION_PREDETERMINADA):
+                print(f"🔧 Configuración actualizada con nuevas claves. Guardando...")
+                guardar_config(config_leida)
+            return config_leida
+        except json.JSONDecodeError as e:
+            print(f"❌ Error: El archivo '{CONFIG_FILE}' está corrupto: {e}")
+            mal_config_path = CONFIG_FILE.with_suffix('.json.bad')
+            try:
+                CONFIG_FILE.rename(mal_config_path)
+                print(f"   -> El archivo dañado ha sido renombrado a '{mal_config_path.name}'")
+            except OSError as rename_error:
+                print(f"   -> No se pudo renombrar el archivo dañado: {rename_error}")
+            print("   -> Se usará y guardará la configuración predeterminada.")
+            guardar_config(config_cargada)
+            return config_cargada
         except Exception as e:
-            print(f"⚠️  Error al cargar configuración: {e}")
+            print(f"⚠️  Error inesperado al cargar configuración: {e}")
             print("   Usando configuración predeterminada...")
-            return CONFIGURACION_PREDETERMINADA.copy()
+            return config_cargada
     else:
         # Si no existe, crear con valores predeterminados
+        print("✓ No se encontró config.json, creando uno nuevo con valores predeterminados.")
         guardar_config(CONFIGURACION_PREDETERMINADA)
-        return CONFIGURACION_PREDETERMINADA.copy()
+        return config_cargada
 
 def guardar_config(config):
     """Guarda la configuración en archivo JSON"""

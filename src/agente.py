@@ -86,38 +86,41 @@ def obtener_temperatura():
     return 0.0
 
 def enviar_datos():
-    """Recopila métricas cada AGENTE_INTERVALO segundos y las envía al servidor central"""
+    """Recopila métricas y las envía al servidor central con lógica de reintentos."""
     intentos_fallidos = 0
     
     while True:
         try:
             metricas = {
                 "id_servidor": ID_SERVIDOR,
-                "cpu": psutil.cpu_percent(interval=1),      # % de CPU
-                "ram": psutil.virtual_memory().percent,     # % de RAM
-                "temp": obtener_temperatura()               # Temperatura
+                "cpu": psutil.cpu_percent(interval=1),
+                "ram": psutil.virtual_memory().percent,
+                "temp": obtener_temperatura()
             }
             
             response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT, verify=VERIFICAR_SSL)
+            response.raise_for_status()  # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
             
-            if response.status_code == 200:
-                print(f"✓ Datos enviados - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}% | Temp: {metricas['temp']}°C")
-                intentos_fallidos = 0
-            else:
-                print(f"✗ Error: {response.status_code}")
-                intentos_fallidos += 1
+            print(f"✓ Datos enviados - CPU: {metricas['cpu']:.1f}% | RAM: {metricas['ram']:.1f}% | Temp: {metricas['temp']:.1f}°C")
+            intentos_fallidos = 0 # Reiniciar contador en éxito
 
-        except requests.exceptions.ConnectTimeout:
-            print(f"⚠️ Intento fallido: Timeout. El servidor no responde. (Revisa el Firewall en {URL_REPORTAR.split('/')[2]})")
+        except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as e:
             intentos_fallidos += 1
-        except requests.exceptions.ConnectionError:
-            print(f"⚠️ Intento fallido: Error de conexión. ¿Está el servidor encendido y conectado a la red?")
-            intentos_fallidos += 1
+            if isinstance(e, requests.exceptions.ConnectTimeout):
+                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Timeout. El servidor no responde.")
+            elif isinstance(e, requests.exceptions.ConnectionError):
+                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error de conexión. ¿Servidor encendido?")
+            elif isinstance(e, requests.exceptions.HTTPError):
+                 print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error del servidor ({e.response.status_code}).")
+            else:
+                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error de red: {e}")
+
             if intentos_fallidos >= AGENTE_REINTENTOS:
-                print(f"✗ Sin conexión al servidor (reintentando cada {AGENTE_ESPERA_REINTENTO}s)")
-                intentos_fallidos = 0
+                print(f"✗ Se superó el máximo de reintentos. Esperando {AGENTE_ESPERA_REINTENTO}s...")
+                time.sleep(AGENTE_ESPERA_REINTENTO)
+                intentos_fallidos = 0 # Reiniciar contador para el próximo ciclo
         except Exception as e:
-            print(f"⚠️ Intento fallido: {e}")
+            print(f"⚠️ Ocurrió un error inesperado: {e}")
             
         time.sleep(AGENTE_INTERVALO)
 

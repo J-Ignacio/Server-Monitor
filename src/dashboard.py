@@ -124,7 +124,8 @@ while True:
                                         df["timestamp"] = pd.to_datetime(df["timestamp"])
                                         # Graficar CPU y RAM para ver la tendencia de la última hora
                                         st.line_chart(df.set_index("timestamp")[["cpu", "ram"]], height=200)
-                            except Exception:
+                            except requests.exceptions.RequestException:
+                                # Si falla la petición (timeout, error de red), muestra este mensaje.
                                 st.caption("Cargando historial...")
                 
                 # --- Trigger de Alerta (Audio + Visual) ---

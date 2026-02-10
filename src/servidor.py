@@ -151,11 +151,18 @@ async def obtener_historial(id_servidor: str):
     cursor = conn.cursor()
     
     # Obtenemos registros de la última hora
+    # Obtenemos registros de la última hora, con un límite para seguridad.
+    # El agente envía cada ~5s, 1 hora = ~720 registros. Limitamos a 1000.
     cursor.execute('''
-        SELECT cpu, ram, timestamp FROM metricas 
-        WHERE id_servidor = ? 
-        AND timestamp >= datetime('now', '-1 hour')
-        ORDER BY timestamp ASC
+        SELECT cpu, ram, timestamp FROM (
+            SELECT cpu, ram, timestamp 
+            FROM metricas 
+            WHERE id_servidor = ? 
+              AND timestamp >= datetime('now', '-1 hour', 'utc')
+            ORDER BY timestamp DESC
+            LIMIT 1000
+        ) 
+        ORDER BY timestamp ASC;
     ''', (id_servidor,))
     rows = cursor.fetchall()
     conn.close()
