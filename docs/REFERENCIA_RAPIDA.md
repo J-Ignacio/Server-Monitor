@@ -16,7 +16,6 @@ AGENTE_FINAL.exe
 ```
 O ejecutar `config.bat` si necesitas configurar IP_CENTRAL.
 
----
 
 ## Configuración Crítica
 
@@ -63,9 +62,7 @@ set IP_CENTRAL=192.168.4.143  # ← Cambiar con tu IP de laptop
 |---------|-----|
 | `Iniciar_NOC.bat` | Ejecutar central (API + Dashboard) |
 | `AGENTE_FINAL.exe` | Ejecutar en servidores remotos |
-| `config.bat` | Configurar agente (crear en servidor) |
 
----
 
 ## Ciclo de Ejecución
 
@@ -79,7 +76,7 @@ set IP_CENTRAL=192.168.4.143  # ← Cambiar con tu IP de laptop
 
 | Error | Causa | Solución |
 |-------|-------|----------|
-| Dashboard vacío | Agente no conecta | Verificar IP_CENTRAL |
+| Dashboard vacío | Agente no conecta | Verificar IP en `config/config.json` |
 | "Port 8000 in use" | Proceso anterior no cerrado | Reiniciar laptop |
 | Agente no inicia | Archivo .exe corrupto | Regenerar con PyInstaller |
 | Conexión rechazada | Firewall bloquea puerto | `netsh advfirewall firewall add rule...` |
