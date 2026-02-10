@@ -123,7 +123,7 @@ pyinstaller AGENTE_FINAL.spec
 |-----------------|------------|-------|
 | `src/` | ✅ SÍ | Código fuente |
 | `docs/` | ✅ SÍ | Documentación |
-| `requeriments.txt` | ✅ SÍ | Dependencias |
+| `requirements.txt` | ✅ SÍ | Dependencias |
 | `Iniciar_NOC.bat` | ✅ SÍ | Script central |
 | `AGENTE_FINAL.spec` | ✅ SÍ | Para regenerar .exe |
 | `README.md` | ✅ SÍ | Guía principal |
@@ -168,7 +168,7 @@ echo Activando ambiente...
 call venv\Scripts\activate
 
 echo Instalando dependencias...
-pip install -r requeriments.txt
+pip install -r requirements.txt
 
 echo Regenerando AGENTE_FINAL.exe...
 pyinstaller AGENTE_FINAL.spec
@@ -198,7 +198,7 @@ Guarda como `setup.bat` y comparte junto con el proyecto.
 ## 📂 Qué compartir y qué no
 
 - [ ] Comprimir sin `venv/`, `build/`, `dist/`, `__pycache__/`
-- [ ] Incluir `requeriments.txt`
+- [ ] Incluir `requirements.txt`
 - [ ] Incluir `AGENTE_FINAL.spec`
 - [ ] Incluir `setup.bat` (opcional pero recomendado)
 - [ ] Verificar que `.gitignore` está presente
@@ -210,11 +210,11 @@ Guarda como `setup.bat` y comparte junto con el proyecto.
 
 **Error: `venv\Scripts\python.exe no existe`**
 - Ejecutar `python -m venv venv`
-- Ejecutar `pip install -r requeriments.txt`
+- Ejecutar `pip install -r requirements.txt`
 
 **Error: `ModuleNotFoundError`**
 - Verificar que está activado el venv
-- Reinstalar: `pip install -r requeriments.txt --force-reinstall`
+- Reinstalar: `pip install -r requirements.txt --force-reinstall`
 
 **Error: `AGENTE_FINAL.exe no existe`**
 - Instalar PyInstaller: `pip install pyinstaller`

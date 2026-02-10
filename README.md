@@ -19,7 +19,7 @@ Monitoreo en tiempo real de CPU, RAM de múltiples servidores en red local.
 
 **Opción 2: Manual (Desarrollo)**
 ```bash
-pip install -r requeriments.txt
+pip install -r requirements.txt
 
 # Terminal 1: Iniciar API
 python -m uvicorn src.servidor:app --host 0.0.0.0 --port 8000

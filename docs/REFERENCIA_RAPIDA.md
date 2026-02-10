@@ -99,5 +99,5 @@ netstat -ano | findstr :8000
 pyinstaller AGENTE_FINAL.spec
 
 # Instalar dependencias
-pip install -r requeriments.txt
+pip install -r requirements.txt
 ```
