@@ -42,6 +42,16 @@ if tema_oscuro:
         [data-testid="stSidebar"] {
             background-color: #262730;
         }
+        /* Botones: Asegurar legibilidad en modo oscuro */
+        .stButton > button {
+            color: #ffffff !important;
+            background-color: #262730 !important;
+            border: 1px solid #4c4c4c !important;
+        }
+        .stButton > button:hover {
+            background-color: #404040 !important;
+            border-color: #ffffff !important;
+        }
     </style>
     """
 else:
