@@ -106,26 +106,7 @@ try:
                         st.write(f"🌡️ Temperatura: **{temp:.1f} °C**")
                     else:
                         st.write(f"🌡️ Temperatura: N/A")
-                        
-                            st.metric(label="Memoria RAM", value=f"{info['ram']}%")
-                            st.progress(min(info['ram']/100, 1.0))
-                        
-                            temp = info.get('temp', 0.0)
-                            if temp > 0:
-                                st.write(f"🌡️ Temperatura: **{temp:.1f} °C**")
-                            else:
-                                st.write(f"🌡️ Temperatura: N/A")
-                                
-                            st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
-                            
-                            # --- Botón de Reinicio ---
-                            if st.button("🔄 Reiniciar Servidor", key=f"btn_{servidor}", help="Envía una orden de reinicio al servidor remoto"):
-                                try:
-                                    protocolo = "https" if USAR_SSL else "http"
-                                    requests.post(f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/admin/reiniciar/{servidor}", verify=VERIFICAR_SSL)
-                                    st.success(f"Orden enviada. El servidor se reiniciará en su próximo reporte.")
-                                except Exception as e:
-                                    st.error(f"Error al enviar orden: {e}")
+                    
                     st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
                     
                     # --- Botón de Reinicio con Confirmación ---
@@ -185,46 +166,11 @@ try:
                                 st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
                         except Exception:
                             pass
-            else:
-                st.info("Esperando conexión de agentes remotos...")
-    except KeyboardInterrupt:
-        st.stop()
-    except Exception as e:
-        st.error(f"Error: {e}")
-    
-    time.sleep(DASHBOARD_INTERVALO)
-                    # --- Gráfico Histórico ---
-                    try:
-                        protocolo = "https" if USAR_SSL else "http"
-                        url_hist = f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
-                        resp = requests.get(url_hist, timeout=1, verify=VERIFICAR_SSL)
-                        if resp.status_code == 200:
-                            datos_hist = resp.json()
-                            if datos_hist:
-                                df = pd.DataFrame(datos_hist)
-                                # Convertir timestamp a fecha/hora para el eje X
-                                df["timestamp"] = pd.to_datetime(df["timestamp"])
-                                # Graficar CPU y RAM para ver la tendencia de la última hora
-                                st.line_chart(df.set_index("timestamp")[["cpu", "ram"]], height=200)
-                    except requests.exceptions.RequestException:
-                        # Si falla la petición (timeout, error de red), muestra este mensaje.
-                        st.caption("Cargando historial...")
-        
-        # --- Trigger de Alerta (Audio + Visual) ---
-        if alerta_critica:
-            st.error("🔥 ¡ALERTA CRÍTICA! Uso de CPU superior al 90% detectado.")
-            sound_file = "alert.mp3"
-            if os.path.exists(sound_file):
-                try:
-                    with open(sound_file, "rb") as f:
-                        data = f.read()
-                        b64 = base64.b64encode(data).decode()
-                        st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-                except Exception:
-                    pass
     else:
         st.info("Esperando conexión de agentes remotos...")
 
+except KeyboardInterrupt:
+    st.stop()
 except Exception as e:
     st.error(f"Error: {e}")
 
