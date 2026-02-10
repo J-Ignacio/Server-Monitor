@@ -4,6 +4,7 @@ import requests
 import time
 import socket
 import sys
+import os
 from pathlib import Path
 import urllib3
 
@@ -35,8 +36,9 @@ def obtener_ip_real():
     return IP
 
 # Identificador único del servidor (nombre + IP)
-hostname = socket.gethostname()
-ID_SERVIDOR = f"{hostname} ({obtener_ip_real()})"
+hostname = socket.gethostname().strip()
+ip_real = obtener_ip_real().strip()
+ID_SERVIDOR = f"{hostname} ({ip_real})"
 
 # Silenciar advertencias de SSL si la verificación está desactivada
 if not VERIFICAR_SSL:
@@ -101,6 +103,16 @@ def enviar_datos():
             response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT, verify=VERIFICAR_SSL)
             response.raise_for_status()  # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
             
+            # Verificar si el servidor nos envió un comando en la respuesta
+            respuesta_json = response.json()
+            if respuesta_json.get("comando") == "reiniciar":
+                print(f"⚠️  COMANDO RECIBIDO: Reiniciando servidor en 5 segundos...")
+                time.sleep(5)
+                if os.name == 'nt': # Windows
+                    os.system("shutdown /r /t 0 /f")
+                else: # Linux / Otros
+                    os.system("shutdown -r now")
+
             print(f"✓ Datos enviados - CPU: {metricas['cpu']:.1f}% | RAM: {metricas['ram']:.1f}% | Temp: {metricas['temp']:.1f}°C")
             intentos_fallidos = 0 # Reiniciar contador en éxito
 

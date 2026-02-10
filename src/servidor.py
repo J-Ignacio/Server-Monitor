@@ -37,6 +37,7 @@ def init_db():
 
 # --- Sistema de Alertas (Heartbeat) ---
 alertas_activas = {} # Cache para no repetir alertas: { "id_servidor": True/False }
+comandos_pendientes = {} # Cola de comandos: { "id_servidor": "comando" }
 
 def enviar_correo(asunto, cuerpo):
     """Envía un correo electrónico usando la configuración SMTP"""
@@ -127,6 +128,12 @@ async def obtener_estado():
     
     return {row["id_servidor"]: dict(row) for row in rows}
 
+# POST: Encola un comando de reinicio para un servidor específico
+@app.post("/admin/reiniciar/{id_servidor}")
+async def solicitar_reinicio(id_servidor: str):
+    comandos_pendientes[id_servidor] = "reiniciar"
+    return {"mensaje": f"Comando de reinicio encolado para {id_servidor}"}
+
 # POST: Recibe métricas de un agente y las guarda en BD
 @app.post("/reportar")
 async def reportar_metricas(metricas: Metricas):
@@ -137,8 +144,12 @@ async def reportar_metricas(metricas: Metricas):
                        (metricas.id_servidor, metricas.cpu, metricas.ram, metricas.temp))
         conn.commit()
         conn.close()
+        
+        # Verificar si hay comandos pendientes para este servidor y entregarlos
+        comando = comandos_pendientes.pop(metricas.id_servidor, None)
+        
         print(f"✅ [{metricas.id_servidor}] CPU: {metricas.cpu}% | RAM: {metricas.ram}%")
-        return {"mensaje": "Métricas guardadas"}
+        return {"mensaje": "Métricas guardadas", "comando": comando}
     except Exception as e:
         if DEBUG: print(f"Error BD: {e}")
         raise HTTPException(status_code=500, detail="Error al guardar métricas")
@@ -150,7 +161,6 @@ async def obtener_historial(id_servidor: str):
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # Obtenemos registros de la última hora
     # Obtenemos registros de la última hora, con un límite para seguridad.
     # El agente envía cada ~5s, 1 hora = ~720 registros. Limitamos a 1000.
     cursor.execute('''

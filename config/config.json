@@ -27,5 +27,11 @@
         "usuario": "jignaciochavezleiva@gmail.com",
         "password": "kwfcdprgncrsqerm",
         "destinatario": "jignaciochavezleiva@gmail.com"
-     }
+    },
+    "seguridad": {
+        "usar_ssl": false,
+        "archivo_cert": "certs/cert.pem",
+        "archivo_key": "certs/key.pem",
+        "verificar_ssl": false
+    }
 }
