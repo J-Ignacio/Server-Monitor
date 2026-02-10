@@ -102,6 +102,6 @@ Host: localhost:8000
 
 1. Conectar por RDP al servidor remoto
 2. Copiar `agente.py` con Ctrl+C/V
-3. Instalar: `pip install requests psutil`
+3. Instalar: `pip install requests psutil wmi`
 4. Editar IP_CENTRAL con IP de laptop central
 5. Ejecutar: `python agente.py`

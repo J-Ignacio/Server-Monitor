@@ -13,7 +13,9 @@
 ### Opción B: Manual (Desarrollo)
 
 ```powershell
-# 1. Instalar dependencias
+# 1. Preparar entorno
+python -m venv venv
+.\venv\Scripts\activate
 pip install -r requirements.txt
 
 # 2. Terminal 1: Iniciar API
@@ -43,14 +45,11 @@ netsh advfirewall firewall add rule name="NOC Monitor" dir=in action=allow proto
 
 2. **Copiar `AGENTE_FINAL.exe`** a una carpeta (ej: `C:\Monitor\`)
 
-3. **Crear archivo `config.bat`** en la misma carpeta:
-   ```bat
-   @echo off
-   set IP_CENTRAL=192.168.4.143
-   AGENTE_FINAL.exe
-   ```
-
-4. **Doble clic en `config.bat`**
+3. **Ejecutar `AGENTE_FINAL.exe`**
+   - Se creará automáticamente la carpeta `config/`.
+   - Si no conecta, cierra el programa.
+   - Edita `config/config.json` y pon la IP correcta.
+   - Vuelve a abrir `AGENTE_FINAL.exe`.
 
 ### Opción B: Con Script Python
 
@@ -58,7 +57,7 @@ netsh advfirewall firewall add rule name="NOC Monitor" dir=in action=allow proto
 
 2. **Instalar dependencias:**
    ```powershell
-   pip install requests psutil
+   pip install requests psutil wmi
    ```
 
 3. **Editar `agente.py`** línea 8:

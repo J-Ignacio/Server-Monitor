@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+streamlit
+pandas
+requests
+psutil
+wmi
+pyinstaller

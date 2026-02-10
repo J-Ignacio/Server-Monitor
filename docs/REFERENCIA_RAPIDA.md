@@ -88,16 +88,13 @@ set IP_CENTRAL=192.168.4.143  # ← Cambiar con tu IP de laptop
 
 ## Comandos Desarrollo (Si necesitas)
 
+**Instalación desde Cero (Copiar y Pegar):**
 ```powershell
-# Ver IP local
-ipconfig
+# 1. Crear y activar entorno virtual
+python -m venv venv
+.\venv\Scripts\activate
 
-# Verificar puerto 8000
-netstat -ano | findstr :8000
-
-# Regenerar AGENTE_FINAL.exe
-pyinstaller AGENTE_FINAL.spec
-
-# Instalar dependencias
+# 2. Instalar todo y crear ejecutable
 pip install -r requirements.txt
+pyinstaller AGENTE_FINAL.spec
 ```
