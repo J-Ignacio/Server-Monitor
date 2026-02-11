@@ -73,6 +73,7 @@ Endpoints:
 | GET | `/estado` | Retorna métricas de todos los servidores |
 | GET | `/historial/{id}` | Retorna historial de métricas (últimos 50) |
 | POST | `/reportar` | Recibe métricas de un agente |
+| POST | `/admin/reiniciar/{id}` | Encola orden de reinicio para un agente |
 
 **GET /estado - Response:**
 ```json
@@ -104,6 +105,7 @@ Características:
 - Muestra un recuadro por cada servidor
 - Barras de progreso visuales
 - **Gráfico histórico:** Línea de tiempo de uso de CPU
+- **Botón de Reinicio:** Con confirmación de seguridad
 - Actualización cada 2 segundos
 - Timestamp de última actualización
 
@@ -139,6 +141,8 @@ Puerto: `8501`
 
 ### Servidor
 - `DB_FILE`: Ruta al archivo `data/metricas.db` (SQLite)
+- `EMAIL_CONFIG`: Credenciales SMTP para alertas
+- `SSL_CERT/KEY`: Rutas para modo HTTPS
 
 ### Dashboard
 - `placeholder`: Contenedor que se refresca cada 2s

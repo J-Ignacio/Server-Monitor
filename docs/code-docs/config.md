@@ -154,3 +154,15 @@ if DEBUG:
 - Construcción de URLs: Define `URL_REPORTAR` dinámicamente. Si el usuario cambia la IP en el JSON, el agente automáticamente sabrá a dónde enviar los datos sin tocar una sola línea de lógica.
 
 - Modo Debug: Al activar `DEBUG: True`, el sistema imprime información extra en la consola, ideal para resolver problemas de conexión durante la instalación.
+
+### 5. Seguridad y Notificaciones
+
+Se han añadido bloques para gestión de correos y certificados SSL.
+
+```python
+    "email": { ... },
+    "seguridad": { "usar_ssl": False, ... }
+```
+
+- **Email:** Permite configurar un servidor SMTP (como Gmail o Outlook) para enviar alertas cuando el "Heartbeat" detecta un servidor caído.
+- **SSL:** Si `usar_ssl` es `True`, el sistema buscará los certificados `.pem` y `.key` para levantar el servidor en modo HTTPS, cifrando la comunicación entre agentes y central.

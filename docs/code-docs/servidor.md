@@ -135,3 +135,16 @@ if __name__ == "__main__":
 ```
 
 - Uvicorn: Es el servidor ASGI de alto rendimiento que permite que FastAPI maneje múltiples peticiones de agentes de forma asíncrona.
+
+### 6. Sistema de Alertas y Comandos
+
+El servidor ahora incluye tareas en segundo plano y gestión de órdenes administrativas.
+
+```python
+async def monitor_latidos():
+    # Verifica cada 60s si un servidor no ha reportado en 5 mins
+    # Si falla, envía correo vía SMTP
+```
+
+- **Monitor de Latidos (Heartbeat):** Una tarea asíncrona (`monitor_latidos`) se ejecuta en el bucle principal. Compara el timestamp del último reporte con la hora actual. Si la diferencia es > 300 segundos (5 min), dispara una alerta por email.
+- **Cola de Comandos:** El endpoint `/admin/reiniciar` guarda la orden en un diccionario `comandos_pendientes`. Cuando el agente hace su siguiente POST a `/reportar`, el servidor revisa si hay comandos para él y se los entrega en la respuesta JSON.
