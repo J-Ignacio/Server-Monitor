@@ -28,7 +28,7 @@
 - Recopila: CPU, RAM cada 5 segundos
 - Envía JSON al endpoint POST `/reportar`
 - Reintentos automáticos en desconexión
-- **Nota**: Temperatura no capturada en versión actual (requiere drivers específicos del hardware)
+- **Sensores**: Intenta capturar temperatura (WMI/psutil) si hay permisos y hardware compatible
 
 ### 2. Servidor Central (`servidor.py`)
 - API FastAPI en laptop central
@@ -94,7 +94,7 @@ Host: localhost:8000
 
 ## Limitaciones
 
-- **Temperatura**: ❌ No disponible en versión actual (requiere drivers específicos y acceso administrativo)
+- **Temperatura**: Depende del hardware y permisos (WMI/OpenHardwareMonitor). Puede requerir ejecutar como Administrador.
 - **Escala**: ~100 servidores máximo
 - **Base de Datos**: SQLite (archivo local), no apto para miles de escrituras concurrentes por segundo.
 

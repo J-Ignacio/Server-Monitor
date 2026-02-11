@@ -44,7 +44,8 @@ Función:
 - Recopila CPU, RAM cada 5 segundos
 - Envía datos al servidor central
 - Reintentos automáticos si hay desconexión
-- **Nota**: Temperatura no capturada (no disponible en versión actual)
+- **Gestión Remota:** Ejecuta comandos de reinicio recibidos del servidor
+- **Sensores:** Intenta leer temperatura vía WMI (Windows) o psutil
 
 Configuración:
 

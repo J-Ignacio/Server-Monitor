@@ -85,6 +85,7 @@
 ### 🔄 Gestión Remota
 - **Botón de Reinicio:** Implementado en Dashboard con confirmación de seguridad (¿Estás seguro?).
 - **Cola de Comandos:** El servidor gestiona órdenes pendientes y las entrega al agente cuando este reporta.
+- **Ejecución Remota:** El agente ya incluye la lógica para recibir el comando `"reiniciar"` y ejecutar `shutdown` en el sistema operativo.
 
 ### 🔒 Seguridad y Red
 - **Soporte SSL/TLS:** Configuración centralizada para certificados `.pem` y `.key` (HTTPS).
@@ -92,7 +93,6 @@
 - **Monitor de Latidos (Heartbeat):** Detección automática de agentes desconectados (>5 min sin reportar).
 
 ### ⚠️ Pendiente / Por Implementar
-- **Lógica en Agente:** El servidor envía el comando `"reiniciar"`, pero falta verificar que `agente.py` tenga la lógica para recibirlo y ejecutar `subprocess.run("shutdown /r")`.
 - **Configuración SMTP:** El archivo `config.json` debe actualizarse con credenciales reales para que funcionen los correos.
 
 ---
