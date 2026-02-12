@@ -18,6 +18,18 @@ def rerun():
 # Configurar página
 st.set_page_config(page_title="NOC Monitor", layout="wide")
 
+def obtener_datos():
+    """Obtiene métricas del servidor central"""
+    try:
+        # Usamos 127.0.0.1 (localhost) para asegurar que el dashboard siempre encuentre a la API
+        # independientemente de la IP de la red o si cambiamos de PC.
+        protocolo = "https" if USAR_SSL else "http"
+        response = requests.get(f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado", timeout=2, verify=VERIFICAR_SSL)
+        return response.json() if response.status_code == 200 else {}
+    except Exception as e:
+        st.warning(f"⚠️  No se puede conectar a la API local (Puerto {SERVIDOR_CENTRAL_PUERTO})")
+        return {}
+
 # --- Configuración de Tema (Sidebar) ---
 with st.sidebar:
     # Logo de la empresa (busca logo.png en la carpeta raíz)
@@ -109,18 +121,6 @@ st.title("🖥️ Sistema de Monitoreo NOC")
 
 # Contenedor que se actualiza dinámicamente
 placeholder = st.empty()
-
-def obtener_datos():
-    """Obtiene métricas del servidor central"""
-    try:
-        # Usamos 127.0.0.1 (localhost) para asegurar que el dashboard siempre encuentre a la API
-        # independientemente de la IP de la red o si cambiamos de PC.
-        protocolo = "https" if USAR_SSL else "http"
-        response = requests.get(f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/estado", timeout=2, verify=VERIFICAR_SSL)
-        return response.json() if response.status_code == 200 else {}
-    except Exception as e:
-        st.warning(f"⚠️  No se puede conectar a la API local (Puerto {SERVIDOR_CENTRAL_PUERTO})")
-        return {}
 
 # --- Lógica Principal (Sin bucle infinito) ---
 base_datos = obtener_datos()
