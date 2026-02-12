@@ -5,13 +5,17 @@ import time
 import pandas as pd
 import os
 import base64
-from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL
+from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL, BASE_DIR
 
 # Configurar página
 st.set_page_config(page_title="NOC Monitor", layout="wide")
 
 # --- Configuración de Tema (Sidebar) ---
 with st.sidebar:
+    # Logo de la empresa (busca logo.png en la carpeta raíz)
+    logo_path = BASE_DIR / "logo.png"
+    if logo_path.exists():
+        st.image(str(logo_path), use_column_width=True)
     st.header("⚙️ Configuración")
     tema_oscuro = st.toggle("Modo Oscuro", value=True)
 
@@ -19,6 +23,11 @@ with st.sidebar:
 if tema_oscuro:
     custom_css = """
     <style>
+        /* Ocultar barra superior de Streamlit (Deploy, Menu, Running, etc) */
+        header {visibility: hidden;}
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+
         .stApp {
             background-color: #0e1117;
             color: #ffffff;
@@ -57,6 +66,11 @@ if tema_oscuro:
 else:
     custom_css = """
     <style>
+        /* Ocultar barra superior de Streamlit (Deploy, Menu, Running, etc) */
+        header {visibility: hidden;}
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+
         .stApp {
             background-color: #ffffff;
             color: #31333f;
@@ -96,6 +110,7 @@ try:
 
         # Crear columnas dinámicas por servidor
         cols = st.columns(len(items_ordenados))
+            
         alerta_critica = False
     
         for i, (servidor, info) in enumerate(items_ordenados):
