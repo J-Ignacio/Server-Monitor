@@ -32,7 +32,7 @@ DB_FILE = DATA_DIR / "metricas.db"
 # Configuración predeterminada
 CONFIGURACION_PREDETERMINADA = {
     "servidor_central": {
-        "ip": "192.168.4.175",  # <--- IP Actualizada
+        "ip": "192.168.4.99",  # <--- IP Actualizada
         "puerto": 8000,
         "host": "0.0.0.0"
     },
