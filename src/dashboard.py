@@ -5,6 +5,7 @@ import time
 import pandas as pd
 import os
 import base64
+from datetime import datetime
 from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL, BASE_DIR
 
 # Función auxiliar para recargar la página (compatible con versiones antiguas)
@@ -23,6 +24,20 @@ with st.sidebar:
     logo_path = BASE_DIR / "logo.png"
     if logo_path.exists():
         st.image(str(logo_path), use_column_width=True)
+    
+    # --- Botón de Exportación ---
+    st.write("---")
+    if st.button("📥 Descargar Reporte CSV"):
+        try:
+            protocolo = "https" if USAR_SSL else "http"
+            # Usamos el endpoint de estado para obtener la lista, pero idealmente sería un endpoint de dump
+            # Por simplicidad, convertimos los datos actuales a CSV
+            df_export = pd.DataFrame(obtener_datos().values())
+            csv = df_export.to_csv(index=False).encode('utf-8')
+            st.download_button("📄 Guardar CSV", csv, "reporte_noc.csv", "text/csv")
+        except Exception as e:
+            st.error(f"Error al generar reporte: {e}")
+            
     st.header("⚙️ Configuración")
     tema_oscuro = st.toggle("Modo Oscuro", value=True)
 
@@ -138,8 +153,22 @@ if base_datos:
         if info['cpu'] > 90:
             alerta_critica = True
 
+        # --- Cálculo de Estado (Online/Offline) ---
+        timestamp_str = info.get('timestamp', '')
+        estado_icono = "❓"
+        tiempo_atras = "Desconocido"
+        
+        if timestamp_str:
+            try:
+                last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                diff = (datetime.utcnow() - last_seen).total_seconds()
+                tiempo_atras = f"hace {int(diff)}s"
+                estado_icono = "🟢" if diff < 30 else ("🟡" if diff < 60 else "🔴")
+            except ValueError:
+                pass
+
         with cols[i]:
-            with st.expander(f"🖥️ {servidor}", expanded=True):
+            with st.expander(f"{estado_icono} {servidor}", expanded=True):
                 st.metric(label="CPU", value=f"{info['cpu']}%")
                 st.progress(min(info['cpu']/100, 1.0))
             
@@ -152,7 +181,7 @@ if base_datos:
                 else:
                     st.write(f"🌡️ Temperatura: N/A")
                 
-                st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
+                st.caption(f"Estado: {tiempo_atras} ({timestamp_str} UTC)")
                 
                 # Mostrar mensajes flash (éxito/error)
                 if f"msg_exito_{servidor}" in st.session_state:
