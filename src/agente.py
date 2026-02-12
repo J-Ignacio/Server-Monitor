@@ -141,4 +141,4 @@ if __name__ == "__main__":
         enviar_datos()
     except Exception as e:
         print(f"\n[ERROR] El agente se detuvo: {e}")
-        input("Presione ENTER para salir...")
+        input("Presione ENTER para salir...")  

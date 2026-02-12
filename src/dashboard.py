@@ -161,19 +161,23 @@ if base_datos:
                     st.error(st.session_state.pop(f"msg_error_{servidor}"))
 
                 # --- Botón de Reinicio con Confirmación ---
+                # Usamos un contenedor vacío para asegurar que los botones se reemplacen limpiamente
+                contenedor_botones = st.empty()
+                
                 if f"conf_{servidor}" not in st.session_state:
                     st.session_state[f"conf_{servidor}"] = False
 
-                if not st.session_state[f"conf_{servidor}"]:
-                    st.button("🔄 Reiniciar Servidor", key=f"btn_ask_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", True))
-                else:
-                    modo_interaccion = True # Usuario decidiendo, pausar refresh
-                    st.warning("¿Estás seguro?")
-                    col_si, col_no = st.columns(2)
-                    with col_si:
-                        st.button("✅ Sí", key=f"btn_yes_{servidor}", on_click=enviar_orden, args=(servidor,))
-                    with col_no:
-                        st.button("❌ No", key=f"btn_no_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", False))
+                with contenedor_botones.container():
+                    if not st.session_state[f"conf_{servidor}"]:
+                        st.button("🔄 Reiniciar Servidor", key=f"btn_ask_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", True))
+                    else:
+                        modo_interaccion = True # Usuario decidiendo, pausar refresh
+                        st.warning("¿Estás seguro?")
+                        col_si, col_no = st.columns(2)
+                        with col_si:
+                            st.button("✅ Sí", key=f"btn_yes_{servidor}", on_click=enviar_orden, args=(servidor,))
+                        with col_no:
+                            st.button("❌ No", key=f"btn_no_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", False))
 
                 # --- Gráfico Histórico ---
                 try:
