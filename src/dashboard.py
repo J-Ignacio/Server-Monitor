@@ -7,6 +7,13 @@ import os
 import base64
 from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL, BASE_DIR
 
+# Función auxiliar para recargar la página (compatible con versiones antiguas)
+def rerun():
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
+
 # Configurar página
 st.set_page_config(page_title="NOC Monitor", layout="wide")
 
@@ -101,107 +108,106 @@ def obtener_datos():
         return {}
 
 # --- Lógica Principal (Sin bucle infinito) ---
-try:
-    base_datos = obtener_datos()
-    
-    if base_datos:
-        # Ordenar servidores alfabéticamente para mantener posición fija
-        items_ordenados = sorted(base_datos.items())
+base_datos = obtener_datos()
+modo_interaccion = False # Flag para pausar recarga si hay menús abiertos
 
-        # Crear columnas dinámicas por servidor
-        cols = st.columns(len(items_ordenados))
+# Helper para callbacks de estado (evita problemas con rerun manual)
+def actualizar_estado(key, valor):
+    st.session_state[key] = valor
+
+def enviar_orden(servidor):
+    try:
+        protocolo = "https" if USAR_SSL else "http"
+        requests.post(f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/admin/reiniciar/{servidor}", verify=VERIFICAR_SSL)
+        st.session_state[f"msg_exito_{servidor}"] = "Orden enviada."
+    except Exception as e:
+        st.session_state[f"msg_error_{servidor}"] = f"Error: {e}"
+    st.session_state[f"conf_{servidor}"] = False
+
+if base_datos:
+    # Ordenar servidores alfabéticamente para mantener posición fija
+    items_ordenados = sorted(base_datos.items())
+
+    # Crear columnas dinámicas por servidor
+    cols = st.columns(len(items_ordenados))
+        
+    alerta_critica = False
+
+    for i, (servidor, info) in enumerate(items_ordenados):
+        # Verificar umbral de alerta (> 90%)
+        if info['cpu'] > 90:
+            alerta_critica = True
+
+        with cols[i]:
+            with st.expander(f"🖥️ {servidor}", expanded=True):
+                st.metric(label="CPU", value=f"{info['cpu']}%")
+                st.progress(min(info['cpu']/100, 1.0))
             
-        alerta_critica = False
-    
-        for i, (servidor, info) in enumerate(items_ordenados):
-            # Verificar umbral de alerta (> 90%)
-            if info['cpu'] > 90:
-                alerta_critica = True
-
-            with cols[i]:
-                with st.expander(f"🖥️ {servidor}", expanded=True):
-                    st.metric(label="CPU", value=f"{info['cpu']}%")
-                    st.progress(min(info['cpu']/100, 1.0))
+                st.metric(label="Memoria RAM", value=f"{info['ram']}%")
+                st.progress(min(info['ram']/100, 1.0))
+            
+                temp = info.get('temp', 0.0)
+                if temp > 0:
+                    st.write(f"🌡️ Temperatura: **{temp:.1f} °C**")
+                else:
+                    st.write(f"🌡️ Temperatura: N/A")
                 
-                    st.metric(label="Memoria RAM", value=f"{info['ram']}%")
-                    st.progress(min(info['ram']/100, 1.0))
+                st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
                 
-                    temp = info.get('temp', 0.0)
-                    if temp > 0:
-                        st.write(f"🌡️ Temperatura: **{temp:.1f} °C**")
-                    else:
-                        st.write(f"🌡️ Temperatura: N/A")
-                    
-                    st.caption(f"Última actualización: {time.strftime('%H:%M:%S')}")
-                    
-                    # --- Botón de Reinicio con Confirmación ---
-                    if f"conf_{servidor}" not in st.session_state:
-                        st.session_state[f"conf_{servidor}"] = False
+                # Mostrar mensajes flash (éxito/error)
+                if f"msg_exito_{servidor}" in st.session_state:
+                    st.success(st.session_state.pop(f"msg_exito_{servidor}"))
+                if f"msg_error_{servidor}" in st.session_state:
+                    st.error(st.session_state.pop(f"msg_error_{servidor}"))
 
-                    if not st.session_state[f"conf_{servidor}"]:
-                        if st.button("🔄 Reiniciar Servidor", key=f"btn_ask_{servidor}"):
-                            st.session_state[f"conf_{servidor}"] = True
-                            st.rerun()
-                    else:
-                        st.warning("¿Estás seguro?")
-                        col_si, col_no = st.columns(2)
-                        with col_si:
-                            if st.button("✅ Sí", key=f"btn_yes_{servidor}"):
-                                try:
-                                    protocolo = "https" if USAR_SSL else "http"
-                                    requests.post(f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/admin/reiniciar/{servidor}", verify=VERIFICAR_SSL)
-                                    st.success("Orden enviada.")
-                                except Exception as e:
-                                    st.error(f"Error: {e}")
-                                finally:
-                                    st.session_state[f"conf_{servidor}"] = False
-                                    time.sleep(1.5)
-                                    st.rerun()
-                        with col_no:
-                            if st.button("❌ No", key=f"btn_no_{servidor}"):
-                                st.session_state[f"conf_{servidor}"] = False
-                                st.rerun()
+                # --- Botón de Reinicio con Confirmación ---
+                if f"conf_{servidor}" not in st.session_state:
+                    st.session_state[f"conf_{servidor}"] = False
 
-                            # --- Gráfico Histórico ---
-                            try:
-                                protocolo = "https" if USAR_SSL else "http"
-                                url_hist = f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
-                                resp = requests.get(url_hist, timeout=1, verify=VERIFICAR_SSL)
-                                if resp.status_code == 200:
-                                    datos_hist = resp.json()
-                                    if datos_hist:
-                                        df = pd.DataFrame(datos_hist)
-                                        # Convertir timestamp a fecha/hora para el eje X
-                                        df["timestamp"] = pd.to_datetime(df["timestamp"])
-                                        # Graficar CPU y RAM para ver la tendencia de la última hora
-                                        st.line_chart(df.set_index("timestamp")[["cpu", "ram"]], height=200)
-                            except requests.exceptions.RequestException:
-                                # Si falla la petición (timeout, error de red), muestra este mensaje.
-                                st.caption("Cargando historial...")
-                
-                # --- Trigger de Alerta (Audio + Visual) ---
-                if alerta_critica:
-                    st.error("🔥 ¡ALERTA CRÍTICA! Uso de CPU superior al 90% detectado.")
-                    sound_file = "alert.mp3"
-                    if os.path.exists(sound_file):
-                        try:
-                            with open(sound_file, "rb") as f:
-                                data = f.read()
-                                b64 = base64.b64encode(data).decode()
-                                st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-                        except Exception:
-                            pass
-    else:
-        st.info("Esperando conexión de agentes remotos...")
+                if not st.session_state[f"conf_{servidor}"]:
+                    st.button("🔄 Reiniciar Servidor", key=f"btn_ask_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", True))
+                else:
+                    modo_interaccion = True # Usuario decidiendo, pausar refresh
+                    st.warning("¿Estás seguro?")
+                    col_si, col_no = st.columns(2)
+                    with col_si:
+                        st.button("✅ Sí", key=f"btn_yes_{servidor}", on_click=enviar_orden, args=(servidor,))
+                    with col_no:
+                        st.button("❌ No", key=f"btn_no_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", False))
 
-except KeyboardInterrupt:
-    st.stop()
-except Exception as e:
-    st.error(f"Error: {e}")
+                # --- Gráfico Histórico ---
+                try:
+                    protocolo = "https" if USAR_SSL else "http"
+                    url_hist = f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
+                    resp = requests.get(url_hist, timeout=1, verify=VERIFICAR_SSL)
+                    if resp.status_code == 200:
+                        datos_hist = resp.json()
+                        if datos_hist:
+                            df = pd.DataFrame(datos_hist)
+                            # Convertir timestamp a fecha/hora para el eje X
+                            df["timestamp"] = pd.to_datetime(df["timestamp"])
+                            # Graficar CPU y RAM para ver la tendencia de la última hora
+                            st.line_chart(df.set_index("timestamp")[["cpu", "ram"]], height=200)
+                except requests.exceptions.RequestException:
+                    # Si falla la petición (timeout, error de red), muestra este mensaje.
+                    st.caption("Cargando historial...")
+            
+            # --- Trigger de Alerta (Audio + Visual) ---
+            if alerta_critica:
+                st.error("🔥 ¡ALERTA CRÍTICA! Uso de CPU superior al 90% detectado.")
+                sound_file = "alert.mp3"
+                if os.path.exists(sound_file):
+                    try:
+                        with open(sound_file, "rb") as f:
+                            data = f.read()
+                            b64 = base64.b64encode(data).decode()
+                            st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+                    except Exception:
+                        pass
+else:
+    st.info("Esperando conexión de agentes remotos...")
 
 # Recarga automática de la página
-time.sleep(DASHBOARD_INTERVALO)
-if hasattr(st, "rerun"):
-    st.rerun()
-else:
-    st.experimental_rerun()
+if not locals().get("modo_interaccion", False):
+    time.sleep(DASHBOARD_INTERVALO)
+    rerun()

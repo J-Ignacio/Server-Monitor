@@ -85,7 +85,7 @@
 ### 🔄 Gestión Remota
 - **Botón de Reinicio:** Implementado en Dashboard con confirmación de seguridad (¿Estás seguro?).
 - **Cola de Comandos:** El servidor gestiona órdenes pendientes y las entrega al agente cuando este reporta.
-- **Ejecución Remota:** El agente ya incluye la lógica para recibir el comando `"reiniciar"` y ejecutar `shutdown` en el sistema operativo.
+ - **Ejecución Remota:** El agente ya incluye la lógica para recibir el comando `"reiniciar"` y ejecutar `shutdown` en el sistema operativo.
 
 ### 🔒 Seguridad y Red
 - **Soporte SSL/TLS:** Configuración centralizada para certificados `.pem` y `.key` (HTTPS).
