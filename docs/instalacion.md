@@ -88,3 +88,15 @@ netsh advfirewall firewall add rule name="NOC Monitor" dir=in action=allow proto
 | "Port 8000 in use" | Cambiar puerto o cerrar proceso que lo usa |
 | "Sin conexión" en agente | Verificar IP_CENTRAL es correcta |
 | Permisos denegados en .bat | Ejecutar como Administrador |
+
+## 🌡️ Habilitar Temperatura (Windows)
+
+Si el dashboard muestra "Temperatura: N/A", Windows no está compartiendo los datos de los sensores.
+
+**Solución:**
+1. Descargar [OpenHardwareMonitor](https://openhardwaremonitor.org/).
+2. Descomprimir y ejecutar `OpenHardwareMonitor.exe` como **Administrador**.
+3. En el menú **Options**, activar:
+   - "Run on Windows Startup"
+   - "Minimize to Tray"
+4. Mantener el programa abierto (minimizado). El agente leerá los datos automáticamente.

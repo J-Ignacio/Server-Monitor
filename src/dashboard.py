@@ -177,9 +177,10 @@ if base_datos:
             
                 temp = info.get('temp', 0.0)
                 if temp > 0:
-                    st.write(f"🌡️ Temperatura: **{temp:.1f} °C**")
+                    st.metric(label="Temperatura", value=f"{temp:.1f} °C")
+                    st.progress(min(temp/100, 1.0))
                 else:
-                    st.write(f"🌡️ Temperatura: N/A")
+                    st.metric(label="Temperatura", value="N/A")
                 
                 st.caption(f"Estado: {tiempo_atras} ({timestamp_str} UTC)")
                 
@@ -219,8 +220,14 @@ if base_datos:
                             df = pd.DataFrame(datos_hist)
                             # Convertir timestamp a fecha/hora para el eje X
                             df["timestamp"] = pd.to_datetime(df["timestamp"])
+                            
+                            # Definir columnas a graficar dinámicamente (solo si existen)
+                            cols_grafico = ["cpu", "ram"]
+                            if "temp" in df.columns:
+                                cols_grafico.append("temp")
+
                             # Graficar CPU y RAM para ver la tendencia de la última hora
-                            st.line_chart(df.set_index("timestamp")[["cpu", "ram"]], height=200)
+                            st.line_chart(df.set_index("timestamp")[cols_grafico], height=200)
                 except requests.exceptions.RequestException:
                     # Si falla la petición (timeout, error de red), muestra este mensaje.
                     st.caption("Cargando historial...")

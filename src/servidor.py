@@ -32,6 +32,14 @@ def init_db():
             temp REAL
         )
     ''')
+    
+    # Migración: Verificar si existe la columna 'temp' y agregarla si falta
+    cursor.execute("PRAGMA table_info(metricas)")
+    columnas = [info[1] for info in cursor.fetchall()]
+    if "temp" not in columnas:
+        print("🔧 Migrando base de datos: Añadiendo columna 'temp'...")
+        cursor.execute("ALTER TABLE metricas ADD COLUMN temp REAL")
+
     conn.commit()
     conn.close()
 
@@ -164,8 +172,8 @@ async def obtener_historial(id_servidor: str):
     # Obtenemos registros de la última hora, con un límite para seguridad.
     # El agente envía cada ~5s, 1 hora = ~720 registros. Limitamos a 1000.
     cursor.execute('''
-        SELECT cpu, ram, timestamp FROM (
-            SELECT cpu, ram, timestamp 
+        SELECT cpu, ram, temp, timestamp FROM (
+            SELECT cpu, ram, temp, timestamp 
             FROM metricas 
             WHERE id_servidor = ? 
               AND timestamp >= datetime('now', '-1 hour', 'utc')
