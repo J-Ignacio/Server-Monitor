@@ -181,4 +181,4 @@ Una de las funciones más importantes para un NOC (Network Operations Center) es
     time.sleep(DASHBOARD_INTERVALO)
 ```
 
-- `time.sleep`: Controla la tasa de refresco. Un valor típico es 2-5 segundos para evitar sobrecargar el navegador y la API. n
+- `time.sleep`: Controla la tasa de refresco. Un valor típico es 2-5 segundos para evitar sobrecargar el navegador y la API. 
