@@ -46,6 +46,14 @@ def init_db():
             temp REAL
         )
     ''')
+    
+    # Migración: Verificar si existe la columna 'temp' y agregarla si falta
+    cursor.execute("PRAGMA table_info(metricas)")
+    columnas = [info[1] for info in cursor.fetchall()]
+    if "temp" not in columnas:
+        print("🔧 Migrando base de datos: Añadiendo columna 'temp'...")
+        cursor.execute("ALTER TABLE metricas ADD COLUMN temp REAL")
+
     conn.commit()
     conn.close()
 
@@ -136,14 +144,22 @@ if __name__ == "__main__":
 
 - Uvicorn: Es el servidor ASGI de alto rendimiento que permite que FastAPI maneje múltiples peticiones de agentes de forma asíncrona.
 
-### 6. Sistema de Alertas y Comandos
+### 6. Sistema de Alertas y Monitoreo de Latidos (Heartbeat)
 
-El servidor ahora incluye tareas en segundo plano y gestión de órdenes administrativas.
+El servidor ejecuta una tarea en segundo plano que verifica si los agentes siguen "vivos".
 
 ```python
 async def monitor_latidos():
-    # Verifica cada 60s si un servidor no ha reportado en 5 mins
-    # Si falla, envía correo vía SMTP
+    """Tarea en segundo plano: verifica si los servidores han dejado de reportar"""
+    while True:
+        await asyncio.sleep(60) # Verificar cada 60 segundos
+        # ... lógica de consulta a BD ...
+        
+        if delta > 300: # 5 minutos sin señal
+            if not alertas_activas.get(srv, False):
+                print(f"⚠️ ALERTA: {srv} no responde hace {int(delta)}s")
+                await loop.run_in_executor(None, enviar_correo, f"🚨 ALERTA: {srv} Caído", ...)
+                alertas_activas[srv] = True
 ```
 
 - **Monitor de Latidos (Heartbeat):** Una tarea asíncrona (`monitor_latidos`) se ejecuta en el bucle principal. Compara el timestamp del último reporte con la hora actual. Si la diferencia es > 300 segundos (5 min), dispara una alerta por email.
