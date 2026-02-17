@@ -16,6 +16,7 @@ class Metricas(BaseModel):
     cpu: float         # % de uso de CPU
     ram: float         # % de memoria RAM
     temp: float        # Temperatura
+    disk: float        # % de uso de Disco
 
 # --- Funciones de Base de Datos ---
 def init_db():
@@ -29,7 +30,8 @@ def init_db():
             id_servidor TEXT,
             cpu REAL,
             ram REAL,
-            temp REAL
+            temp REAL,
+            disk REAL
         )
     ''')
     
@@ -39,6 +41,9 @@ def init_db():
     if "temp" not in columnas:
         print("🔧 Migrando base de datos: Añadiendo columna 'temp'...")
         cursor.execute("ALTER TABLE metricas ADD COLUMN temp REAL")
+    if "disk" not in columnas:
+        print("🔧 Migrando base de datos: Añadiendo columna 'disk'...")
+        cursor.execute("ALTER TABLE metricas ADD COLUMN disk REAL")
 
     conn.commit()
     conn.close()
@@ -127,7 +132,7 @@ async def obtener_estado():
     
     # Obtener la última métrica de cada servidor
     cursor.execute('''
-        SELECT id_servidor, cpu, ram, temp, timestamp 
+        SELECT id_servidor, cpu, ram, temp, disk, timestamp 
         FROM metricas 
         WHERE id IN (SELECT MAX(id) FROM metricas GROUP BY id_servidor)
     ''')
@@ -148,15 +153,15 @@ async def reportar_metricas(metricas: Metricas):
     try:
         conn = sqlite3.connect(str(DB_FILE))
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO metricas (id_servidor, cpu, ram, temp) VALUES (?, ?, ?, ?)",
-                       (metricas.id_servidor, metricas.cpu, metricas.ram, metricas.temp))
+        cursor.execute("INSERT INTO metricas (id_servidor, cpu, ram, temp, disk) VALUES (?, ?, ?, ?, ?)",
+                       (metricas.id_servidor, metricas.cpu, metricas.ram, metricas.temp, metricas.disk))
         conn.commit()
         conn.close()
         
         # Verificar si hay comandos pendientes para este servidor y entregarlos
         comando = comandos_pendientes.pop(metricas.id_servidor, None)
         
-        print(f"✅ [{metricas.id_servidor}] CPU: {metricas.cpu}% | RAM: {metricas.ram}%")
+        print(f"✅ [{metricas.id_servidor}] CPU: {metricas.cpu}% | RAM: {metricas.ram}% | DISK: {metricas.disk}%")
         return {"mensaje": "Métricas guardadas", "comando": comando}
     except Exception as e:
         if DEBUG: print(f"Error BD: {e}")
@@ -172,8 +177,8 @@ async def obtener_historial(id_servidor: str):
     # Obtenemos registros de la última hora, con un límite para seguridad.
     # El agente envía cada ~5s, 1 hora = ~720 registros. Limitamos a 1000.
     cursor.execute('''
-        SELECT cpu, ram, temp, timestamp FROM (
-            SELECT cpu, ram, temp, timestamp 
+        SELECT cpu, ram, temp, disk, timestamp FROM (
+            SELECT cpu, ram, temp, disk, timestamp 
             FROM metricas 
             WHERE id_servidor = ? 
               AND timestamp >= datetime('now', '-1 hour', 'utc')

@@ -176,6 +176,10 @@ if base_datos:
                 st.metric(label="Memoria RAM", value=f"{info['ram']}%")
                 st.progress(min(info['ram']/100, 1.0))
             
+                disk = info.get('disk', 0.0)
+                st.metric(label="Disco Principal", value=f"{disk}%")
+                st.progress(min(disk/100, 1.0))
+
                 temp = info.get('temp', 0.0)
                 if temp > 0:
                     st.metric(label="Temperatura", value=f"{temp:.1f} °C")
@@ -226,6 +230,8 @@ if base_datos:
                             cols_grafico = ["cpu", "ram"]
                             if "temp" in df.columns:
                                 cols_grafico.append("temp")
+                            if "disk" in df.columns:
+                                cols_grafico.append("disk")
 
                             # Graficar CPU y RAM para ver la tendencia de la última hora
                             st.line_chart(df.set_index("timestamp")[cols_grafico], height=200)
