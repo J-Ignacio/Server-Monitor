@@ -3,7 +3,7 @@ import sqlite3
 import asyncio
 import smtplib
 from email.message import EmailMessage
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB_FILE, EMAIL_CONFIG, USAR_SSL, SSL_CERT, SSL_KEY
@@ -81,7 +81,7 @@ async def monitor_latidos():
             rows = cursor.fetchall()
             conn.close()
 
-            ahora = datetime.utcnow()
+            ahora = datetime.now(timezone.utc).replace(tzinfo=None)
             for row in rows:
                 srv = row["id_servidor"]
                 ultimo = datetime.strptime(row["ultimo"], "%Y-%m-%d %H:%M:%S")

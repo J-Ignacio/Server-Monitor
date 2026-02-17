@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import os
 import base64
-from datetime import datetime
+from datetime import datetime, timezone
 from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL, BASE_DIR
 
 # Función auxiliar para recargar la página (compatible con versiones antiguas)
@@ -161,7 +161,8 @@ if base_datos:
         if timestamp_str:
             try:
                 last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-                diff = (datetime.utcnow() - last_seen).total_seconds()
+                # Usar timezone.utc y quitar info de zona para comparar con fecha naive de SQLite
+                diff = (datetime.now(timezone.utc).replace(tzinfo=None) - last_seen).total_seconds()
                 tiempo_atras = f"hace {int(diff)}s"
                 estado_icono = "🟢" if diff < 30 else ("🟡" if diff < 60 else "🔴")
             except ValueError:
