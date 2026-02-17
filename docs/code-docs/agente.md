@@ -164,4 +164,13 @@ if __name__ == "__main__":
         input("Presione ENTER para salir...")
 ```
 
+### 6. Ejecución como Servicio de Windows
+
+Para entornos de producción, el agente puede ejecutarse como un servicio en segundo plano utilizando el wrapper `src/agente_servicio.py`.
+
+- **Wrapper (`agente_servicio.py`):** Utiliza la librería `pywin32` para interactuar con el Service Control Manager (SCM) de Windows.
+- **Señal de Parada:** El servicio envía un evento de threading (`stop_event`) a la función `enviar_datos()` para permitir un cierre limpio sin matar el proceso abruptamente.
+- **Instalación:** Se gestiona mediante el script `instalar_servicio.bat` que registra el servicio con inicio automático.
+```
+
 - Finalidad: El bloque `if __name__ == "__main__":` previene que el agente comience a recolectar datos si el archivo es importado accidentalmente por otro script. `El input()` final es una cortesía para usuarios de Windows, permitiéndoles leer el error antes de que la ventana de consola desaparezca

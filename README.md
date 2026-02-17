@@ -46,12 +46,7 @@ streamlit run src/dashboard.py
 | `src/agente.py` | Código fuente del agente |
 | `src/servidor.py` | Código fuente del API |
 | `src/dashboard.py` | Código fuente del dashboard |
-| `src/config.py` | Lógica de configuración y rutas |
 | `config/config.json` | Configuración del sistema |
-| `docs/` | Documentación general y guías |
-| `docs/code-docs/` | Documentación técnica del código |
-| `requirements.txt` | Lista de librerías necesarias |
-| `AGENTE_FINAL.spec` | Archivo de compilación PyInstaller |
 | `test_configuracion.py` | Script de prueba de configuración |
 | `logs/` | Registros del sistema |
 
@@ -61,7 +56,6 @@ streamlit run src/dashboard.py
 - [⚙️ Componentes Técnicos y Ejecutables](./docs/COMPONENTES.md)
 - [🏗️ Arquitectura y Flujo de Datos](./docs/arquitectura.md)
 - [📘 Guía de Despliegue y Solución de Problemas](./docs/COMPARTIR_PROYECTO.md)
-- [💻 Documentación Técnica del Código](./docs/code-docs/)
 
 ## ⚙️ Requisitos
 
