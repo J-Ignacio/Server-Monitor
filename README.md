@@ -61,6 +61,7 @@ streamlit run src/dashboard.py
 - [⚙️ Componentes Técnicos y Ejecutables](./docs/COMPONENTES.md)
 - [🏗️ Arquitectura y Flujo de Datos](./docs/arquitectura.md)
 - [📘 Guía de Despliegue y Solución de Problemas](./docs/COMPARTIR_PROYECTO.md)
+- [💻 Documentación Técnica del Código](./docs/code-docs/)
 
 ## ⚙️ Requisitos
 
