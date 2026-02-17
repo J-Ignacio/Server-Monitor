@@ -87,11 +87,14 @@ def obtener_temperatura():
     
     return 0.0
 
-def enviar_datos():
+def enviar_datos(stop_event=None):
     """Recopila métricas y las envía al servidor central con lógica de reintentos."""
     intentos_fallidos = 0
     
     while True:
+        if stop_event and stop_event.is_set():
+            break
+
         try:
             metricas = {
                 "id_servidor": ID_SERVIDOR,
@@ -134,7 +137,11 @@ def enviar_datos():
         except Exception as e:
             print(f"⚠️ Ocurrió un error inesperado: {e}")
             
-        time.sleep(AGENTE_INTERVALO)
+        if stop_event:
+            if stop_event.wait(AGENTE_INTERVALO):
+                break
+        else:
+            time.sleep(AGENTE_INTERVALO)
 
 if __name__ == "__main__":
     try:

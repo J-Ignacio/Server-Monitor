@@ -7,3 +7,4 @@ requests
 psutil
 wmi
 pyinstaller
+pywin32
