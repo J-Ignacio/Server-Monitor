@@ -30,9 +30,10 @@ streamlit run src/dashboard.py
 
 ### Servidor Remoto
 ```bash
-# 1. Copiar AGENTE_FINAL.exe (o agente.py) al servidor
-# 2. Doble clic en AGENTE_FINAL.exe
-# 3. Editar archivo .bat si necesitas cambiar IP_CENTRAL
+# 1. Generar ejecutables usando herramientas.bat (Opción 1)
+# 2. Ir a carpeta dist/ y copiar todo el contenido al servidor
+# 3. Ejecutar instalar_agente.bat como Administrador
+# 4. Editar config/config.json con la IP del servidor central
 ```
 
 ## 📁 Archivos
@@ -42,10 +43,7 @@ streamlit run src/dashboard.py
 | **setup.bat** | Configuración inicial (primera vez) |
 | **limpiar.bat** | Borra venv y temporales (Factory Reset) |
 | **Iniciar_NOC.bat** | Ejecutar central (API + Dashboard) |
-| **instalar_servicio.bat** | Instalador del Servicio de Windows |
-| **desinstalar_servicio.bat** | Elimina el Servicio de Windows |
-| **compilar.bat** | Genera los .exe del agente |
-| **AGENTE_PORTABLE.exe** | Ejecutable para servidores remotos |
+| **AGENTE_FINAL.exe** | Ejecutable para servidores remotos |
 | `src/agente.py` | Código fuente del agente |
 | `src/servidor.py` | Código fuente del API |
 | `src/dashboard.py` | Código fuente del dashboard |
