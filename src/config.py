@@ -96,7 +96,7 @@ def cargar_config():
                 config_leida = json.load(f)
             # Fusionar para añadir claves de nuevas versiones sin borrar las antiguas
             if _fusionar_configs(config_leida, CONFIGURACION_PREDETERMINADA):
-                print(f"🔧 Configuración actualizada con nuevas claves. Guardando...")
+                # print(f"🔧 Configuración actualizada con nuevas claves. Guardando...")
                 guardar_config(config_leida)
             return config_leida
         except json.JSONDecodeError as e:
@@ -116,7 +116,7 @@ def cargar_config():
             return config_cargada
     else:
         # Si no existe, crear con valores predeterminados
-        print("✓ No se encontró config.json, creando uno nuevo con valores predeterminados.")
+        # print("✓ No se encontró config.json, creando uno nuevo con valores predeterminados.")
         guardar_config(CONFIGURACION_PREDETERMINADA)
         return config_cargada
 
@@ -125,7 +125,7 @@ def guardar_config(config):
     try:
         with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=4, ensure_ascii=False)
-        print(f"✓ Configuración guardada en: {CONFIG_FILE}")
+        # print(f"✓ Configuración guardada en: {CONFIG_FILE}")
     except Exception as e:
         print(f"✗ Error al guardar configuración: {e}")
 

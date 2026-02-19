@@ -43,8 +43,6 @@ def configurar_logger():
         handlers=handlers
     )
 
-configurar_logger()
-
 # Detecta la IP real del servidor en la red local
 def obtener_ip_real():
     """Obtiene la IP local del servidor"""
@@ -57,23 +55,6 @@ def obtener_ip_real():
     finally:
         s.close()
     return IP
-
-# Identificador único del servidor (nombre + IP)
-hostname = socket.gethostname().strip()
-ip_real = obtener_ip_real().strip()
-ID_SERVIDOR = f"{hostname} ({ip_real})"
-
-# Silenciar advertencias de SSL si la verificación está desactivada
-if not VERIFICAR_SSL:
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-print(f"✓ Agente iniciado: {ID_SERVIDOR}")
-print(f"✓ Reportando a: {URL_REPORTAR}")
-print(f"⏱️  Intervalo de envío: {AGENTE_INTERVALO}s")
-print(f"🌡️  Soporte Temperatura: {'ACTIVO (WMI)' if wmi else 'INACTIVO (Librería wmi no encontrada)'}")
-logging.info(f"🚀 Agente iniciado: {ID_SERVIDOR}")
-logging.info(f"📡 Reportando a: {URL_REPORTAR}")
-logging.info(f"⏱️  Intervalo: {AGENTE_INTERVALO}s | Temp: {'WMI' if wmi else 'Nativo'}")
 
 def obtener_temperatura():
     """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM)"""
@@ -115,6 +96,24 @@ def obtener_temperatura():
 
 def enviar_datos(stop_event=None):
     """Recopila métricas y las envía al servidor central con lógica de reintentos."""
+    configurar_logger()
+    
+    hostname = socket.gethostname().strip()
+    ip_real = obtener_ip_real().strip()
+    ID_SERVIDOR = f"{hostname} ({ip_real})"
+
+    # Silenciar advertencias de SSL si la verificación está desactivada
+    if not VERIFICAR_SSL:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    print(f"✓ Agente iniciado: {ID_SERVIDOR}")
+    print(f"✓ Reportando a: {URL_REPORTAR}")
+    print(f"⏱️  Intervalo de envío: {AGENTE_INTERVALO}s")
+    print(f"🌡️  Soporte Temperatura: {'ACTIVO (WMI)' if wmi else 'INACTIVO (Librería wmi no encontrada)'}")
+    logging.info(f"🚀 Agente iniciado: {ID_SERVIDOR}")
+    logging.info(f"📡 Reportando a: {URL_REPORTAR}")
+    logging.info(f"⏱️  Intervalo: {AGENTE_INTERVALO}s | Temp: {'WMI' if wmi else 'Nativo'}")
+
     intentos_fallidos = 0
     
     while True:

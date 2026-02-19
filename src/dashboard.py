@@ -175,12 +175,12 @@ if base_datos:
             
                 st.metric(label="Memoria RAM", value=f"{info['ram']}%")
                 st.progress(min(info['ram']/100, 1.0))
-            
-                disk = info.get('disk', 0.0)
+
+                disk = info.get('disk') or 0.0
                 st.metric(label="Disco Principal", value=f"{disk}%")
                 st.progress(min(disk/100, 1.0))
 
-                temp = info.get('temp', 0.0)
+                temp = info.get('temp') or 0.0
                 if temp > 0:
                     st.metric(label="Temperatura", value=f"{temp:.1f} °C")
                     st.progress(min(temp/100, 1.0))
