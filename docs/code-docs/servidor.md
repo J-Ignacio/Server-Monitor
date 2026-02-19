@@ -7,7 +7,7 @@ El servidor central funciona como el punto de encuentro de todo el ecosistema. S
 ### 1. Definición de Modelos y Esquema de Datos
 Para garantizar que los datos recibidos sean correctos, utilizamos Pydantic, que valida automáticamente el tipo de dato de cada métrica.
 
-```
+```python
 import sqlite3
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -31,7 +31,7 @@ class Metricas(BaseModel):
 
 SQLite es ideal para este proyecto por su ligereza y porque no requiere un servidor de base de datos independiente.
 
-```
+```python
 def init_db():
     """Inicializa la tabla de métricas si no existe en el archivo .db"""
     conn = sqlite3.connect(str(DB_FILE))
@@ -71,7 +71,7 @@ async def startup_event():
 
 Estas rutas permiten al Dashboard obtener la información actual e histórica de los equipos monitoreados.
 
-```
+```python
 @app.get("/estado")
 async def obtener_estado():
     """Retorna la última métrica conocida de cada servidor registrado"""
@@ -113,7 +113,7 @@ async def obtener_historial(id_servidor: str):
 
 Es la puerta de entrada para los agentes remotos.
 
-```
+```python
 @app.post("/reportar")
 async def reportar_metricas(metricas: Metricas):
     """Guarda en la base de datos las métricas enviadas por el agente"""
@@ -135,7 +135,7 @@ async def reportar_metricas(metricas: Metricas):
 - Manejo de Excepciones: Si la base de datos está bloqueada o hay un error de escritura, se lanza una `HTTPException 500`, informando al agente que el dato no se guardó.
 
 ### 5. Ejecución del Servidor
-```
+```python
 if __name__ == "__main__":
     import uvicorn
     # Inicia el servidor usando el host y puerto definidos en config.py

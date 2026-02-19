@@ -7,7 +7,7 @@ El Dashboard es una aplicación web interactiva que consume la API del servidor 
 
 Streamlit permite inyectar CSS para personalizar la apariencia. Este bloque gestiona el "Modo Oscuro" y la estructura base de la página.
 
-```
+```python
 import streamlit as st
 import requests
 import time
@@ -64,7 +64,7 @@ st.title("🖥️ Sistema de Monitoreo NOC")
 
 El dashboard no lee la base de datos directamente; consulta los endpoints del servidor central.
 
-```
+```python
 # Contenedor que se actualiza dinámicamente
 placeholder = st.empty()
 
@@ -91,7 +91,7 @@ def obtener_datos():
 
 Este bloque procesa la lista de servidores y genera columnas dinámicas con métricas y gráficos de rendimiento.
 
-```
+```python
 # Bucle de actualización constante
 while True:
     try:
@@ -154,7 +154,7 @@ while True:
 
 Una de las funciones más importantes para un NOC (Network Operations Center) es la notificación inmediata de fallos.
 
-```
+```python
                 # --- Trigger de Alerta (Audio + Visual) ---
                 if alerta_critica:
                     st.error("🔥 ¡ALERTA CRÍTICA! Uso de CPU superior al 90% detectado.")
@@ -174,7 +174,7 @@ Una de las funciones más importantes para un NOC (Network Operations Center) es
 - Lógica de Umbral: La variable `alerta_critica` se activa si cualquier servidor del bucle supera el 90% de CPU.
 
 5. Control de Ciclo
-```
+```python
     except Exception as e:
         st.error(f"Error: {e}")
     

@@ -11,7 +11,13 @@ import threading
 from pathlib import Path
 
 # Asegurar que podemos importar el módulo 'agente' desde el mismo directorio
-base_path = Path(__file__).resolve().parent
+if getattr(sys, 'frozen', False):
+    # Si corre como .exe
+    base_path = Path(sys.executable).parent
+else:
+    # Si corre como script .py
+    base_path = Path(__file__).resolve().parent
+
 sys.path.append(str(base_path))
 
 from agente import enviar_datos

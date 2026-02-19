@@ -13,19 +13,19 @@ Si solo quieres **monitorear otras PCs** (no desarrollar en ellas), no necesitas
 ## 🏆 Reglas de Oro (Lee esto primero)
 
 ### 2. Generar el Ejecutable
-Ejecuta en tu terminal:
-```powershell
-pyinstaller AGENTE_FINAL.spec
-```
+1. Ejecuta `herramientas.bat`.
+2. Selecciona la opción **[1] Compilar Agentes**.
+3. Espera a que termine el proceso.
+
 1. **Si cambias la IP en el código:** Debes **BORRAR** el archivo `config/config.json` para que el sistema tome el cambio. Si no lo borras, seguirá usando la configuración vieja.
 2. **Si hay "Timeout":** Casi siempre es el Firewall de Windows. Ejecuta el comando de desbloqueo (ver abajo).
-3. **Para instalar rápido:** Usa siempre `setup.bat` en lugar de hacerlo manual.
+3. **Para instalar rápido:** Usa siempre `instalar_agente.bat` en lugar de hacerlo manual.
 
 ### 3. Distribuir
 1. Ve a la carpeta `dist/`.
-2. Copia el archivo `AGENTE_FINAL.exe`.
-3. Pégalo en cualquier PC de tu red (PC2, PC3, PC4...).
-4. **¡Listo!** Al abrirlo, se conectará automáticamente a tu servidor.
+2. Copia **todo el contenido** (el archivo `NOC_SERVICIO.exe` y `instalar_agente.bat`) a la PC remota.
+3. En la PC remota, ejecuta `instalar_agente.bat` como Administrador.
+4. **¡Listo!** El servicio se instalará y comenzará a reportar automáticamente.
 
 ---
 
@@ -71,22 +71,13 @@ El `.gitignore` ya excluye estas carpetas automáticamente.
 
 **Comprimir sin las carpetas innecesarias:**
 ### 2. Generar Ejecutable
-Ejecuta en tu terminal:
-```powershell
-# Opción A: Usando 7-Zip/WinRAR
-# Click derecho → Agregar al archivo
-# Marcar "Excluir carpetas": venv/, build/, dist/, __pycache__/, .git/
-
-# Opción B: Comando PowerShell
-Compress-Archive -Path . -DestinationPath Monitor_Servidores.zip -Exclude @("venv", "build", "dist", "__pycache__", ".git")
-.\venv\Scripts\pyinstaller AGENTE_FINAL.spec
-```
+Usa `herramientas.bat` -> Opción [1].
 
 ### 2. En la Otra PC
 ### 3. Distribuir
-1. Copia `dist/AGENTE_FINAL.exe` a la PC remota.
+1. Copia los archivos de `dist/` a la PC remota.
 2. **Importante:** Si ya había una versión anterior, borra el archivo `config.json` o la carpeta `config` en la PC remota.
-3. Ejecuta el `.exe`.
+3. Ejecuta `instalar_agente.bat`.
 
 **Paso 1: Extraer archivo**
 ```powershell
@@ -109,9 +100,6 @@ pip install -r requirements.txt
 ```powershell
 # Opción A: Doble clic en Iniciar_NOC.bat
 Iniciar_NOC.bat
-
-# Opción B: Regenerar AGENTE_FINAL.exe
-pyinstaller AGENTE_FINAL.spec
 ```
 
 ---
@@ -125,7 +113,7 @@ pyinstaller AGENTE_FINAL.spec
 | `docs/` | ✅ SÍ | Documentación |
 | `requirements.txt` | ✅ SÍ | Dependencias |
 | `Iniciar_NOC.bat` | ✅ SÍ | Script central |
-| `AGENTE_FINAL.spec` | ✅ SÍ | Para regenerar .exe |
+| `herramientas.bat` | ✅ SÍ | Para regenerar .exe |
 | `README.md` | ✅ SÍ | Guía principal |
 | `venv/` | ❌ NO | Ambiente virtual (muy pesado) |
 | `build/` | ❌ NO | Compilación temporal |
@@ -148,7 +136,7 @@ pyinstaller AGENTE_FINAL.spec
 |----------|--------|
 | Código + docs | ~500 KB |
 | `venv/` (con todo) | 500+ MB |
-| `dist/AGENTE_FINAL.exe` | ~50 MB |
+| `dist/AGENTE_PORTABLE.exe` | ~50 MB |
 
 **Total sin venv:** ~60 MB  
 **Total con venv:** ~600+ MB
@@ -170,8 +158,8 @@ call venv\Scripts\activate
 echo Instalando dependencias...
 pip install -r requirements.txt
 
-echo Regenerando AGENTE_FINAL.exe...
-pyinstaller AGENTE_FINAL.spec
+echo Regenerando ejecutables...
+call herramientas.bat
 
 echo.
 echo ✅ Configuración completada!
@@ -218,7 +206,7 @@ Guarda como `setup.bat` y comparte junto con el proyecto.
 
 **Error: `AGENTE_FINAL.exe no existe`**
 - Instalar PyInstaller: `pip install pyinstaller`
-- Regenerar: `pyinstaller AGENTE_FINAL.spec`
+- Regenerar: `herramientas.bat`
 | Carpeta | Acción | Por qué |
 |---------|--------|---------|
 | `src/` | ✅ Copiar | Es el código fuente. |

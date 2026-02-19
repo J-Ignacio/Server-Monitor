@@ -43,13 +43,13 @@ netsh advfirewall firewall add rule name="NOC Monitor" dir=in action=allow proto
    mstsc /v:192.168.1.100
    ```
 
-2. **Copiar `AGENTE_FINAL.exe`** a una carpeta (ej: `C:\Monitor\`)
+2. **Copiar `AGENTE_PORTABLE.exe`** a una carpeta (ej: `C:\Monitor\`)
 
-3. **Ejecutar `AGENTE_FINAL.exe`**
+3. **Ejecutar `AGENTE_PORTABLE.exe`**
    - Se creará automáticamente la carpeta `config/`.
    - Si no conecta, cierra el programa.
    - Edita `config/config.json` y pon la IP correcta.
-   - Vuelve a abrir `AGENTE_FINAL.exe`.
+   - Vuelve a abrir `AGENTE_PORTABLE.exe`.
 
 ### Opción B: Con Script Python
 

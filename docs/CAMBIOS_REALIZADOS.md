@@ -41,7 +41,7 @@
 - Detecta si Python está instalado
 - Crea venv automáticamente
 - Instala todas las dependencias
-- Regenera AGENTE_FINAL.exe
+- Regenera ejecutables (Portable y Servicio)
 - **Primera cosa que debe ejecutar el usuario**
 
 ---

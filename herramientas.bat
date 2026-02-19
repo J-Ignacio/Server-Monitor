@@ -88,7 +88,9 @@ echo echo ==========================================
 echo echo.
 echo cd /d "%%~dp0"
 echo echo 1. Instalando servicio...
-echo dist\NOC_SERVICIO.exe install --startup=auto
+echo "%%~dp0NOC_SERVICIO.exe" install
+echo sc config NOCMonitorAgente start= auto
+echo timeout /t 2 /nobreak ^>nul
 echo echo 2. Iniciando servicio...
 echo sc start NOCMonitorAgente
 echo echo.

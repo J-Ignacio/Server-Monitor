@@ -18,19 +18,19 @@ Uso:
 
 ---
 
-### `AGENTE_FINAL.exe` (Servidor Remoto)
-**Ejecutable compilado del agente**
+### `NOC_SERVICIO.exe` (Servidor Remoto)
+**Ejecutable compilado del agente como Servicio**
 
-Generado con PyInstaller desde `src/agente.py`
+Generado con PyInstaller desde `src/agente_servicio.py`. Se instala usando `instalar_agente.bat`.
 
 Uso:
 ```powershell
-# Doble clic en AGENTE_FINAL.exe (en cualquier PC de la red)
+# Ejecutar instalar_agente.bat como Administrador
 ```
 
 **Para regenerar .exe:**
 ```powershell
-pyinstaller AGENTE_FINAL.spec
+herramientas.bat -> Opción [1]
 ```
 
 ---

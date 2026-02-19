@@ -1,106 +1,198 @@
-# Documentación Técnica: Agente de Monitoreo `(agente.py)`
+# Documentación Técnica: Agente de Monitoreo
 
-El agente es un script de telemetría diseñado para ejecutarse de forma persistente. Su función es transformar el estado del hardware en datos estructurados (JSON) y transmitirlos mediante una arquitectura cliente-servidor.
+Este documento detalla el funcionamiento del Agente de Monitoreo, incluyendo tanto la lógica de recolección de datos (`agente.py`) como el wrapper para ejecutarse como Servicio de Windows (`agente_servicio.py`).
 
-## 🛠️ Análisis Detallado por Módulos
+## 1. Código Fuente Completo: Lógica del Agente (`src/agente.py`)
 
-### 1. Inicialización y Gestión de Dependencias
-
-Esta sección asegura que el entorno de ejecución tenga las herramientas necesarias y maneja la compatibilidad entre Sistemas Operativos.
-
-```
+```python
 """Agente remoto: recopila métricas del servidor y las envía a la central"""
-import psutil      # Interfaz de bajo nivel para estadísticas de sistema
-import requests    # Cliente HTTP para comunicación con la API
-import time        # Gestión de retardos y timers
-import socket      # Primitivas de red para identificación de host
-import sys         # Control de flujos de salida y sistema
+import psutil
+import requests
+import time
+import socket
+import sys
+import os
 from pathlib import Path
+import logging
+from logging.handlers import RotatingFileHandler
+import urllib3
 
-# Carga condicional de WMI (Windows Management Instrumentation)
+# Intento de importar WMI para soporte de temperatura en Windows
 try:
     import wmi
 except ImportError:
     wmi = None
 
-# Carga de constantes desde módulo local 'config'
 try:
-    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO
+    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR
 except Exception as e:
     print(f"\n[ERROR FATAL] No se pudo cargar la configuración: {e}")
     print("Posible causa: Falta de permisos para crear 'config.json' o carpeta 'config'.")
     input("Presione ENTER para salir...")
     sys.exit(1)
-```
 
-- Análisis de Seguridad: El uso de `sys.exit(1)` garantiza que el programa no entre en un estado inconsistente si faltan variables críticas. El código `1` indica una salida por error.
+# --- Configuración de Logging ---
+def configurar_logger():
+    handlers = [logging.StreamHandler(sys.stdout)] # Siempre mostrar en consola
+    
+    if LOGS_HABILITADOS:
+        log_dir = BASE_DIR / "logs"
+        log_dir.mkdir(exist_ok=True)
+        log_file = log_dir / "agente.log"
+        
+        # Rota el archivo cuando llega a 1MB, guarda hasta 3 copias antiguas
+        handlers.append(RotatingFileHandler(str(log_file), maxBytes=1_000_000, backupCount=3, encoding='utf-8'))
 
-- Abstracción de SO: El bloque `try/except` de la librería `wmi` permite que el agente sea agnóstico al sistema operativo, evitando errores de "Módulo no encontrado" en entornos Linux/Unix.
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=handlers
+    )
 
-### 2. Algoritmo de Identificación de Red
-
-Para garantizar que la central identifique correctamente la procedencia de los datos, el agente calcula su identidad dinámicamente.
-
-```
+# Detecta la IP real del servidor en la red local
 def obtener_ip_real():
-    """Detecta la interfaz de red activa mediante un socket efímero"""
+    """Obtiene la IP local del servidor"""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        # No requiere conexión real, solo fuerza al SO a elegir una interfaz de salida
         s.connect(('8.8.8.8', 1))
         IP = s.getsockname()[0]
     except Exception:
-        IP = '127.0.0.1' # Fallback a bucle local si no hay red activa
+        IP = '127.0.0.1'
     finally:
-        s.close() # Liberación de recursos del sistema
+        s.close()
     return IP
 
-hostname = socket.gethostname()
-ID_SERVIDOR = f"{hostname} ({obtener_ip_real()})"
-```
-- Eficiencia Técnica: Se utiliza el protocolo UDP (`SOCK_DGRAM`) porque es más rápido y no requiere un apretón de manos (handshake) completo para determinar la ruta de salida.
-
-- Contexto de Identidad: El `ID_SERVIDOR` combina el nombre de red del equipo con su IP actual, lo que facilita el filtrado en bases de datos si el servidor tiene múltiples interfaces.
-
-### 3. Jerarquía de Sensores Térmicos
-
-Extraer la temperatura en Windows es un reto técnico debido a las restricciones del kernel. Este bloque implementa tres estrategias de respaldo.
-
-```
 def obtener_temperatura():
-    """Estrategias en cascada para la obtención de métricas térmicas"""
+    """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM)"""
+    # 1. Estrategia Windows: WMI
     if wmi:
-        # MÉTODO 1: Integración con OpenHardwareMonitor (vía WMI)
         try:
+            # Opción A: OpenHardwareMonitor (Requiere app corriendo)
+            # Namespace: root\OpenHardwareMonitor
             ohm = wmi.WMI(namespace="root\\OpenHardwareMonitor")
             sensors = ohm.Sensor()
             for sensor in sensors:
                 if sensor.SensorType == 'Temperature' and 'CPU' in sensor.Name:
                     return float(sensor.Value)
         except:
-            pass 
+            pass # OHM no disponible
 
-        # MÉTODO 2: API de ACPI (Advanced Configuration and Power Interface)
         try:
+            # Opción B: WMI Estándar (MSAcpi)
+            # Devuelve décimas de Kelvin. (K - 273.2) = Celsius
             w = wmi.WMI(namespace="root\\wmi")
             temps = w.MSAcpi_ThermalZoneTemperature()
             if temps:
-                # Conversión: décimas de Kelvin a grados Celsius
-                kelvin_x_10 = temps[0].CurrentTemperature
-                celsius = (kelvin_x_10 - 2732) / 10.0
+                kelvin = temps[0].CurrentTemperature
+                celsius = (kelvin - 2732) / 10.0
                 if celsius > 0: return celsius
         except:
             pass
 
-    # MÉTODO 3: Fallback multiplataforma (psutil)
+    # 2. Estrategia General: psutil
     try:
         temps = psutil.sensors_temperatures()
         if temps:
+            # Retorna la primera temperatura disponible
             return next(iter(temps.values()))[0].current
     except:
         pass
     
     return 0.0
+
+def enviar_datos(stop_event=None):
+    """Recopila métricas y las envía al servidor central con lógica de reintentos."""
+    configurar_logger()
+    
+    hostname = socket.gethostname().strip()
+    ip_real = obtener_ip_real().strip()
+    ID_SERVIDOR = f"{hostname} ({ip_real})"
+
+    # Silenciar advertencias de SSL si la verificación está desactivada
+    if not VERIFICAR_SSL:
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    print(f"✓ Agente iniciado: {ID_SERVIDOR}")
+    print(f"✓ Reportando a: {URL_REPORTAR}")
+    print(f"⏱️  Intervalo de envío: {AGENTE_INTERVALO}s")
+    print(f"🌡️  Soporte Temperatura: {'ACTIVO (WMI)' if wmi else 'INACTIVO (Librería wmi no encontrada)'}")
+    logging.info(f"🚀 Agente iniciado: {ID_SERVIDOR}")
+    logging.info(f"📡 Reportando a: {URL_REPORTAR}")
+    logging.info(f"⏱️  Intervalo: {AGENTE_INTERVALO}s | Temp: {'WMI' if wmi else 'Nativo'}")
+
+    intentos_fallidos = 0
+    
+    while True:
+        if stop_event and stop_event.is_set():
+            break
+
+        try:
+            metricas = {
+                "id_servidor": ID_SERVIDOR,
+                "cpu": psutil.cpu_percent(interval=1),
+                "ram": psutil.virtual_memory().percent,
+                "temp": obtener_temperatura(),
+                "disk": psutil.disk_usage(os.path.abspath(os.sep)).percent
+            }
+            
+            response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT, verify=VERIFICAR_SSL)
+            response.raise_for_status()  # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
+            
+            # Verificar si el servidor nos envió un comando en la respuesta
+            respuesta_json = response.json()
+            if respuesta_json.get("comando") == "reiniciar":
+                print(f"⚠️  COMANDO RECIBIDO: Reiniciando servidor en 5 segundos...")
+                logging.warning(f"⚠️  COMANDO RECIBIDO: Reiniciando servidor en 5 segundos...")
+                time.sleep(5)
+                if os.name == 'nt': # Windows
+                    os.system("shutdown /r /t 0 /f")
+                else: # Linux / Otros
+                    os.system("shutdown -r now")
+
+            print(f"✓ Datos enviados - CPU: {metricas['cpu']:.1f}% | RAM: {metricas['ram']:.1f}% | Disk: {metricas['disk']:.1f}%")
+            logging.info(f"✓ Enviado - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}% | Disk: {metricas['disk']}% | Temp: {metricas['temp']:.1f}°C")
+            intentos_fallidos = 0 # Reiniciar contador en éxito
+
+        except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as e:
+            intentos_fallidos += 1
+            msg_error = f"Error de conexión ({intentos_fallidos}/{AGENTE_REINTENTOS}): {e}"
+            
+            if isinstance(e, requests.exceptions.ConnectTimeout):
+                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Timeout. El servidor no responde.")
+                msg_error = "Timeout: El servidor central no responde."
+            elif isinstance(e, requests.exceptions.ConnectionError):
+                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error de conexión. ¿Servidor encendido?")
+            elif isinstance(e, requests.exceptions.HTTPError):
+                 print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error del servidor ({e.response.status_code}).")
+            else:
+                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error de red: {e}")
+                msg_error = "Conexión rechazada: ¿El servidor central está encendido?"
+            
+            logging.warning(f"⚠️ {msg_error}")
+
+            if intentos_fallidos >= AGENTE_REINTENTOS:
+                print(f"✗ Se superó el máximo de reintentos. Esperando {AGENTE_ESPERA_REINTENTO}s...")
+                logging.error(f"✗ Límite de reintentos alcanzado. Pausando {AGENTE_ESPERA_REINTENTO}s...")
+                time.sleep(AGENTE_ESPERA_REINTENTO)
+                intentos_fallidos = 0 # Reiniciar contador para el próximo ciclo
+        except Exception as e:
+            print(f"⚠️ Ocurrió un error inesperado: {e}")
+            logging.exception(f"⚠️ Error inesperado: {e}")
+            
+        if stop_event:
+            if stop_event.wait(AGENTE_INTERVALO):
+                break
+        else:
+            time.sleep(AGENTE_INTERVALO)
+
+if __name__ == "__main__":
+    try:
+        enviar_datos()
+    except Exception as e:
+        print(f"\n[ERROR] El agente se detuvo: {e}")
+        logging.critical(f"🛑 El agente se detuvo por error crítico: {e}")
+        input("Presione ENTER para salir...")
 ```
 
 - Lógica de Negocio: Se prioriza el Método 1 sobre el 2 porque `MSAcpi` a menudo reporta valores estáticos si el fabricante de la BIOS no expone correctamente las zonas térmicas.
@@ -111,7 +203,7 @@ def obtener_temperatura():
 
 El núcleo del agente, encargado de la captura de datos y la gestión de la comunicación HTTP.
 
-```
+```python
 def enviar_datos():
     """Bucle infinito de reporte con manejo de estados de error"""
     intentos_fallidos = 0
@@ -154,7 +246,7 @@ def enviar_datos():
 
 Protección del flujo de ejecución principal.
 
-```
+```python
 if __name__ == "__main__":
     try:
         enviar_datos()
@@ -166,11 +258,74 @@ if __name__ == "__main__":
 
 ### 6. Ejecución como Servicio de Windows
 
-Para entornos de producción, el agente puede ejecutarse como un servicio en segundo plano utilizando el wrapper `src/agente_servicio.py`.
+Para entornos de producción, el agente se ejecuta como un servicio en segundo plano.
 
+## 2. Código Fuente Completo: Servicio de Windows (`src/agente_servicio.py`)
+
+Este archivo actúa como un "wrapper" o envoltorio que permite a Windows gestionar el script de Python como un servicio en segundo plano (sin ventana).
+
+```python
+"""
+Wrapper para ejecutar el Agente como Servicio de Windows.
+Requiere permisos de Administrador para instalarse.
+"""
+import win32serviceutil
+import win32service
+import win32event
+import servicemanager
+import sys
+import threading
+from pathlib import Path
+
+# Asegurar que podemos importar el módulo 'agente' desde el mismo directorio
+if getattr(sys, 'frozen', False):
+    # Si corre como .exe
+    base_path = Path(sys.executable).parent
+else:
+    # Si corre como script .py
+    base_path = Path(__file__).resolve().parent
+
+sys.path.append(str(base_path))
+
+from agente import enviar_datos
+
+
+class AgenteService(win32serviceutil.ServiceFramework):
+    _svc_name_ = "NOCMonitorAgente"
+    _svc_display_name_ = "NOC Monitor Agente"
+    _svc_description_ = "Envía métricas de CPU/RAM/Disco al servidor central NOC."
+
+    def __init__(self, args):
+        win32serviceutil.ServiceFramework.__init__(self, args)
+        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        self.stop_event = threading.Event()
+
+    def SvcStop(self):
+        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        win32event.SetEvent(self.hWaitStop)
+        self.stop_event.set()
+
+    def SvcDoRun(self):
+        servicemanager.LogMsg(
+            servicemanager.EVENTLOG_INFORMATION_TYPE,
+            servicemanager.PYS_SERVICE_STARTED,
+            (self._svc_name_, '')
+        )
+
+        try:
+            enviar_datos(stop_event=self.stop_event)
+        except Exception as e:
+            servicemanager.LogErrorMsg(f"Error fatal en agente: {e}")
+
+
+if __name__ == '__main__':
+    win32serviceutil.HandleCommandLine(AgenteService)
+```
+
+### Explicación Técnica
 - **Wrapper (`agente_servicio.py`):** Utiliza la librería `pywin32` para interactuar con el Service Control Manager (SCM) de Windows.
 - **Señal de Parada:** El servicio envía un evento de threading (`stop_event`) a la función `enviar_datos()` para permitir un cierre limpio sin matar el proceso abruptamente.
-- **Instalación:** Se gestiona mediante el script `instalar_servicio.bat` que registra el servicio con inicio automático.
+- **Instalación:** Se gestiona mediante el script `instalar_agente.bat` que registra el servicio con inicio automático.
 ```
 
 - Finalidad: El bloque `if __name__ == "__main__":` previene que el agente comience a recolectar datos si el archivo es importado accidentalmente por otro script. `El input()` final es una cortesía para usuarios de Windows, permitiéndoles leer el error antes de que la ventana de consola desaparezca

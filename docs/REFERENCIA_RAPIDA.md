@@ -12,7 +12,7 @@ Se abre API y Dashboard automáticamente.
 ### Servidor Remoto
 ```powershell
 # Doble clic en:
-AGENTE_FINAL.exe
+AGENTE_PORTABLE.exe
 ```
 O ejecutar `config.bat` si necesitas configurar IP_CENTRAL.
 
@@ -61,7 +61,7 @@ set IP_CENTRAL=192.168.4.143  # ← Cambiar con tu IP de laptop
 | Archivo | Uso |
 |---------|-----|
 | `Iniciar_NOC.bat` | Ejecutar central (API + Dashboard) |
-| `AGENTE_FINAL.exe` | Ejecutar en servidores remotos |
+| `AGENTE_PORTABLE.exe` | Ejecutar en servidores remotos (Manual) |
 
 
 ## Ciclo de Ejecución
@@ -93,5 +93,5 @@ python -m venv venv
 
 # 2. Instalar todo y crear ejecutable
 pip install -r requirements.txt
-pyinstaller AGENTE_FINAL.spec
+herramientas.bat
 ```
