@@ -1,11 +1,17 @@
 """API FastAPI: recibe y almacena métricas de agentes remotos"""
 import sqlite3
 import asyncio
+import sys
+from pathlib import Path
 import smtplib
 from email.message import EmailMessage
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+
+# Asegurar que el directorio raíz está en el path para importar src.config
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB_FILE, EMAIL_CONFIG, USAR_SSL, SSL_CERT, SSL_KEY
 
 app = FastAPI()

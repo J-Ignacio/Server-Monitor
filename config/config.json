@@ -1,6 +1,6 @@
 {
     "servidor_central": {
-        "ip": "192.168.4.142",
+        "ip": "192.168.4.99",
         "puerto": 8000,
         "host": "0.0.0.0"
     },
@@ -12,7 +12,7 @@
     },
     "dashboard": {
         "intervalo_actualizacion": 2,
-        "host": "localhost",
+        "host": "localhost",        
         "puerto": 8501
     },
     "sistema": {

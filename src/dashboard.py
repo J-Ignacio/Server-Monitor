@@ -5,7 +5,13 @@ import time
 import pandas as pd
 import os
 import base64
+import sys
+from pathlib import Path
 from datetime import datetime, timezone
+
+# Asegurar que el directorio raíz está en el path para importar src.config
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
 from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL, BASE_DIR
 
 # Función auxiliar para recargar la página (compatible con versiones antiguas)
