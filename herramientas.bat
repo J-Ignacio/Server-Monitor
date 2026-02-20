@@ -54,15 +54,18 @@ echo.
 echo [1/2] Compilando Agente Portable...
 pyinstaller --noconfirm --onefile --console --clean ^
 --name "AGENTE_PORTABLE" ^
+--paths=src ^
 --hidden-import=psutil ^
 --hidden-import=requests ^
 --hidden-import=wmi ^
+--hidden-import=config ^
 src\agente.py
 
 echo.
 echo [2/2] Compilando Agente Servicio...
 pyinstaller --noconfirm --onefile --console --clean ^
 --name "NOC_SERVICIO" ^
+--paths=src ^
 --hidden-import=win32timezone ^
 --hidden-import=servicemanager ^
 --hidden-import=win32serviceutil ^
@@ -71,6 +74,8 @@ pyinstaller --noconfirm --onefile --console --clean ^
 --hidden-import=psutil ^
 --hidden-import=requests ^
 --hidden-import=wmi ^
+--hidden-import=agente ^
+--hidden-import=config ^
 src\agente_servicio.py
 
 echo.
