@@ -45,7 +45,7 @@ Función:
 - Envía datos al servidor central
 - Reintentos automáticos si hay desconexión
 - **Gestión Remota:** Ejecuta comandos de reinicio recibidos del servidor
-- **Sensores:** Intenta leer temperatura vía WMI (Windows) o psutil
+- **Sensores:** Intenta leer temperatura vía WMI. Se integra automáticamente con **Open Hardware Monitor** si está activo.
 
 Configuración:
 
