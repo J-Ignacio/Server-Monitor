@@ -62,16 +62,20 @@ def obtener_temperatura():
     """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM)"""
     # 1. Estrategia Windows: WMI
     if wmi:
-        try:
-            # Opción A: OpenHardwareMonitor (Requiere app corriendo)
-            # Namespace: root\OpenHardwareMonitor
-            ohm = wmi.WMI(namespace="root\\OpenHardwareMonitor")
-            sensors = ohm.Sensor()
-            for sensor in sensors:
-                if sensor.SensorType == 'Temperature' and 'CPU' in sensor.Name:
-                    return float(sensor.Value)
-        except:
-            pass # OHM no disponible
+        # Probar OpenHardwareMonitor y LibreHardwareMonitor
+        namespaces = ["root\\OpenHardwareMonitor", "root\\LibreHardwareMonitor"]
+        for ns in namespaces:
+            try:
+                ohm = wmi.WMI(namespace=ns)
+                sensors = ohm.Sensor()
+                for sensor in sensors:
+                    if sensor.SensorType == 'Temperature':
+                        # Búsqueda más flexible (CPU, Core, Package, Tctl, Tdie)
+                        nombre = sensor.Name.upper()
+                        if any(x in nombre for x in ['CPU', 'CORE', 'PACKAGE', 'TCTL', 'TDIE']):
+                            return float(sensor.Value)
+            except:
+                continue
 
         try:
             # Opción B: WMI Estándar (MSAcpi)
@@ -96,9 +100,48 @@ def obtener_temperatura():
     
     return 0.0
 
+def ejecutar_diagnostico():
+    """Imprime en consola qué sensores se detectan al iniciar"""
+    print("\n🔍 --- DIAGNÓSTICO DE SENSORES ---")
+    if not wmi:
+        print("❌ Librería 'wmi' no detectada.")
+        return
+
+    namespaces = ["root\\OpenHardwareMonitor", "root\\LibreHardwareMonitor"]
+    encontrado = False
+
+    for ns in namespaces:
+        try:
+            ohm = wmi.WMI(namespace=ns)
+            sensores = ohm.Sensor()
+            if sensores:
+                print(f"✅ Conexión con {ns}: EXITOSA")
+                encontrado = True
+                temps = [s for s in sensores if s.SensorType == 'Temperature']
+                if temps:
+                    print("   Sensores de temperatura encontrados:")
+                    for s in temps:
+                        print(f"   - Nombre: '{s.Name}' | Valor: {s.Value}°C")
+                else:
+                    print("   ⚠️ Conectado, pero NO hay sensores de temperatura.")
+        except:
+            pass
+    
+    if not encontrado:
+        print(f"⚠️ No se detectó Open Hardware Monitor ni Libre Hardware Monitor activos.")
+        print(f"   Asegúrate de ejecutarlo como Administrador.")
+    print("-----------------------------------\n")
+
 def enviar_datos(stop_event=None):
     """Recopila métricas y las envía al servidor central con lógica de reintentos."""
     configurar_logger()
+
+    # Inicializar COM para WMI al principio (Vital para evitar errores de inicialización)
+    if wmi and pythoncom:
+        try:
+            pythoncom.CoInitialize()
+        except:
+            pass
     
     hostname = socket.gethostname().strip()
     ip_real = obtener_ip_real().strip()
@@ -116,12 +159,8 @@ def enviar_datos(stop_event=None):
     logging.info(f"📡 Reportando a: {URL_REPORTAR}")
     logging.info(f"⏱️  Intervalo: {AGENTE_INTERVALO}s | Temp: {'WMI' if wmi else 'Nativo'}")
 
-    # Inicializar COM para WMI (necesario para leer OpenHardwareMonitor desde un servicio)
-    if wmi and pythoncom:
-        try:
-            pythoncom.CoInitialize()
-        except:
-            pass
+    # Ejecutar diagnóstico visual al arrancar
+    ejecutar_diagnostico()
 
     intentos_fallidos = 0
     
