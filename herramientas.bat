@@ -57,6 +57,7 @@ pyinstaller --noconfirm --onefile --console --clean ^
 --paths=src ^
 --hidden-import=psutil ^
 --hidden-import=requests ^
+--hidden-import=pythoncom ^
 --hidden-import=wmi ^
 --hidden-import=config ^
 src\agente.py
@@ -72,6 +73,7 @@ pyinstaller --noconfirm --onefile --console --clean ^
 --hidden-import=win32service ^
 --hidden-import=win32event ^
 --hidden-import=psutil ^
+--hidden-import=pythoncom ^
 --hidden-import=requests ^
 --hidden-import=wmi ^
 --hidden-import=agente ^

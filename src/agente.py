@@ -13,8 +13,10 @@ import urllib3
 # Intento de importar WMI para soporte de temperatura en Windows
 try:
     import wmi
+    import pythoncom
 except ImportError:
     wmi = None
+    pythoncom = None
 
 try:
     from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR
@@ -113,6 +115,13 @@ def enviar_datos(stop_event=None):
     logging.info(f"🚀 Agente iniciado: {ID_SERVIDOR}")
     logging.info(f"📡 Reportando a: {URL_REPORTAR}")
     logging.info(f"⏱️  Intervalo: {AGENTE_INTERVALO}s | Temp: {'WMI' if wmi else 'Nativo'}")
+
+    # Inicializar COM para WMI (necesario para leer OpenHardwareMonitor desde un servicio)
+    if wmi and pythoncom:
+        try:
+            pythoncom.CoInitialize()
+        except:
+            pass
 
     intentos_fallidos = 0
     
