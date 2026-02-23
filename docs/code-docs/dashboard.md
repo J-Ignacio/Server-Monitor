@@ -120,7 +120,7 @@ while True:
                             st.metric(label="CPU", value=f"{info['cpu']}%")
                             st.progress(min(info['cpu']/100, 1.0))
                             
-                            # ... (Métricas de RAM y Temperatura) ...
+                            # ... (Métricas de RAM, Disco y Temperatura) ...
 
                             # --- Gráfico Histórico ---
                             try:

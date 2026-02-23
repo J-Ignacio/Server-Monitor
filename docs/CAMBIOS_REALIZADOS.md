@@ -29,6 +29,13 @@
 - Historial de métricas conservado tras reinicios.
 - Nuevo endpoint `/historial/{id}` en la API para consultar datos pasados.
 
+### Nuevas Métricas
+- **Monitoreo de Disco:** Se ha incorporado la lectura del porcentaje de uso de la partición principal (C: o /).
+- **Migración Automática:** El servidor detecta si la base de datos es antigua y añade la columna `disk` automáticamente.
+
+### Estructura del Proyecto
+- **Paquete `src`:** Documentada la inclusión de `__init__.py` para modularidad y soporte de importaciones.
+
 ### Gráficos Históricos
 - Dashboard ahora muestra la evolución de la CPU en el tiempo.
 - Uso de `pandas` para procesar series temporales.

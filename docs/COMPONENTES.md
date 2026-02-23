@@ -41,7 +41,7 @@ herramientas.bat -> Opción [1]
 **Se ejecuta en cada servidor remoto (via AGENTE_FINAL.exe)**
 
 Función:
-- Recopila CPU, RAM cada 5 segundos
+- Recopila CPU, RAM y Disco (Partición Principal) cada 5 segundos
 - Envía datos al servidor central
 - Reintentos automáticos si hay desconexión
 - **Gestión Remota:** Ejecuta comandos de reinicio recibidos del servidor
@@ -81,7 +81,8 @@ Endpoints:
 {
   "SERVIDOR1 (192.168.1.100)": {
     "cpu": 45.2,
-    "ram": 62.1
+    "ram": 62.1,
+    "disk": 55.4
   }
 }
 ```
