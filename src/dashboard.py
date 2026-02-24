@@ -8,6 +8,7 @@ import base64
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
+import textwrap
 
 # Asegurar que el directorio raíz está en el path para importar src.config
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -55,71 +56,186 @@ with st.sidebar:
             st.download_button("📄 Guardar CSV", csv, "reporte_noc.csv", "text/csv")
         except Exception as e:
             st.error(f"Error al generar reporte: {e}")
-            
-    st.header("⚙️ Configuración")
-    tema_oscuro = st.toggle("Modo Oscuro", value=True)
 
-# Inyectar CSS dinámico según el estado del toggle
-if tema_oscuro:
-    custom_css = """
-    <style>
-        /* Ocultar barra superior de Streamlit (Deploy, Menu, Running, etc) */
-        header {visibility: hidden;}
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
+    st.write("---")
+    st.subheader("🕒 Sincronización")
+    offset_manual = st.number_input("Ajuste de Horas", min_value=-24, max_value=24, value=0, step=1, help="Usa esto si los servidores salen Offline por diferencia de horario.")
 
-        .stApp {
-            background-color: #0e1117;
-            color: #ffffff;
-        }
-        /* Headers, textos y métricas */
-        h1, h2, h3, p, .stMarkdown, [data-testid="stMetricValue"], [data-testid="stMetricLabel"] {
-            color: #ffffff !important;
-        }
-        /* Expander: Fondo oscuro para evitar texto invisible sobre fondo blanco por defecto */
-        [data-testid="stExpander"] summary {
-            color: #ffffff !important;
-            background-color: #262730 !important;
-        }
-        [data-testid="stExpander"] summary:hover {
-            background-color: #404040 !important;
-        }
-        /* Iconos SVG específicos (ej. flecha expander) */
-        [data-testid="stExpander"] summary svg {
-            fill: #ffffff !important;
-        }
-        [data-testid="stSidebar"] {
-            background-color: #262730;
-        }
-        /* Botones: Asegurar legibilidad en modo oscuro */
-        .stButton > button {
-            color: #ffffff !important;
-            background-color: #262730 !important;
-            border: 1px solid #4c4c4c !important;
-        }
-        .stButton > button:hover {
-            background-color: #404040 !important;
-            border-color: #ffffff !important;
-        }
-    </style>
-    """
-else:
-    custom_css = """
-    <style>
-        /* Ocultar barra superior de Streamlit (Deploy, Menu, Running, etc) */
-        header {visibility: hidden;}
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
+    st.write("---")
+    st.caption("v2.0 - Diseño NOC Profesional")
 
-        .stApp {
-            background-color: #ffffff;
-            color: #31333f;
-        }
-        [data-testid="stSidebar"] {
-            background-color: #f0f2f6;
-        }
-    </style>
-    """
+# --- CSS Estilo Glassmorphism / Dark NOC ---
+custom_css = """
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+    /* Reset y fondo global */
+    .stApp {
+        background-color: #050505;
+        background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #050505 100%);
+        color: #e0e0e0;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Ocultar elementos de Streamlit no deseados */
+    header {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Estilo de la Tarjeta del Servidor */
+    .server-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 10px;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .server-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    /* Header de la tarjeta */
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 12px;
+    }
+    
+    .server-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Indicador de Estado (Punto brillante) */
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        position: relative;
+    }
+    
+    .status-indicator::after {
+        content: '';
+        position: absolute;
+        top: -4px; left: -4px; right: -4px; bottom: -4px;
+        border-radius: 50%;
+        opacity: 0.4;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 0.4; }
+        70% { transform: scale(1.5); opacity: 0; }
+        100% { transform: scale(1); opacity: 0; }
+    }
+    
+    .status-online { background-color: #00ff9d; box-shadow: 0 0 10px #00ff9d; }
+    .status-online::after { background-color: #00ff9d; }
+    
+    .status-warning { background-color: #ffcc00; box-shadow: 0 0 10px #ffcc00; }
+    .status-warning::after { background-color: #ffcc00; }
+    
+    .status-offline { background-color: #ff4d4d; box-shadow: 0 0 10px #ff4d4d; }
+    .status-offline::after { background-color: #ff4d4d; }
+
+    /* Grid de Métricas */
+    .metrics-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+    
+    .metric-box {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 12px;
+        border-radius: 8px;
+    }
+    
+    .metric-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #888;
+        margin-bottom: 6px;
+    }
+    
+    .metric-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    
+    .metric-unit {
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    /* Barras de Progreso Custom */
+    .progress-track {
+        width: 100%;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s ease;
+    }
+
+    /* Footer de la tarjeta */
+    .card-footer {
+        margin-top: 15px;
+        font-size: 0.75rem;
+        color: #555;
+        text-align: right;
+    }
+
+    /* Ajustes para componentes nativos de Streamlit */
+    .stButton > button {
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: #fff !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        transition: all 0.2s;
+    }
+    .stButton > button:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border-color: #fff !important;
+    }
+    
+    /* Expander transparente */
+    [data-testid="stExpander"] {
+        background-color: transparent !important;
+        border: none !important;
+    }
+    [data-testid="stExpander"] summary {
+        color: #888 !important;
+    }
+    [data-testid="stExpander"] summary:hover {
+        color: #fff !important;
+    }
+</style>
+"""
 
 st.markdown(custom_css, unsafe_allow_html=True)
 
@@ -161,39 +277,111 @@ if base_datos:
 
         # --- Cálculo de Estado (Online/Offline) ---
         timestamp_str = info.get('timestamp', '')
-        estado_icono = "❓"
+        
+        # Lógica de estado visual
+        status_class = "status-offline"
+        status_text = "OFFLINE"
         tiempo_atras = "Desconocido"
         
         if timestamp_str:
             try:
-                last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-                # Usar timezone.utc y quitar info de zona para comparar con fecha naive de SQLite
-                diff = (datetime.now(timezone.utc).replace(tzinfo=None) - last_seen).total_seconds()
-                tiempo_atras = f"hace {int(diff)}s"
-                estado_icono = "🟢" if diff < 30 else ("🟡" if diff < 60 else "🔴")
-            except ValueError:
-                pass
+                # Parseo manual para máxima compatibilidad con SQLite (UTC naive)
+                if "." in timestamp_str:
+                    last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+                else:
+                    last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+
+                # --- SMART SYNC: Auto-detectar zona horaria ---
+                # Comparamos contra UTC y contra Hora Local y nos quedamos con la diferencia menor.
+                now_utc = datetime.utcnow()
+                now_local = datetime.now()
+                
+                diff_utc = (now_utc - last_seen).total_seconds()
+                diff_local = (now_local - last_seen).total_seconds()
+                
+                # Elegir la diferencia más lógica (la más cercana a 0, sea positiva o negativa)
+                diff = diff_utc if abs(diff_utc) < abs(diff_local) else diff_local
+                
+                # Aplicar compensación manual del usuario (en segundos)
+                diff -= (offset_manual * 3600)
+
+                # Si el dato viene del "futuro" (relojes desajustados), lo tratamos como "ahora mismo"
+                if diff < 0: diff = 0
+                
+                # Formato amigable de tiempo
+                if diff < 60: tiempo_atras = f"hace {int(diff)}s"
+                elif diff < 3600: tiempo_atras = f"hace {int(diff/60)}m"
+                elif diff < 86400: tiempo_atras = f"hace {int(diff/3600)}h"
+                else: tiempo_atras = f"hace {int(diff/3600)}h ({last_seen.strftime('%H:%M')})"
+                
+                # Umbral de tolerancia aumentado a 45s para evitar parpadeos
+                if diff < 45:
+                    status_class = "status-online"
+                    status_text = "ONLINE"
+                elif diff < 60:
+                    status_class = "status-warning"
+                    status_text = "LENTO"
+            except Exception as e:
+                tiempo_atras = "Error fecha"
+
+        # Helper para colores de barras
+        def get_color(val):
+            if val < 60: return "#00ff9d" # Verde neón
+            if val < 85: return "#ffcc00" # Amarillo
+            return "#ff4d4d" # Rojo
+
+        cpu_color = get_color(info['cpu'])
+        ram_color = get_color(info['ram'])
+        disk_color = get_color(info.get('disk', 0))
+        temp_val = info.get('temp', 0)
+        temp_color = get_color(temp_val if temp_val > 0 else 0)
+
+        # --- Construcción de Tarjeta HTML ---
+        # Definimos el HTML con indentación normal para legibilidad en el código
+        raw_html = f"""
+        <div class="server-card">
+            <div class="card-header">
+                <div class="server-title">
+                    <span class="status-indicator {status_class}"></span>
+                    {servidor}
+                </div>
+                <div style="font-size: 0.8rem; color: #666;">{status_text}</div>
+            </div>
+            
+            <div class="metrics-container">
+                <div class="metric-box">
+                    <div class="metric-label">CPU</div>
+                    <div class="metric-value">{info['cpu']}<span class="metric-unit">%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {info['cpu']}%; background-color: {cpu_color};"></div></div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">RAM</div>
+                    <div class="metric-value">{info['ram']}<span class="metric-unit">%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {info['ram']}%; background-color: {ram_color};"></div></div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">DISCO</div>
+                    <div class="metric-value">{info.get('disk', 0)}<span class="metric-unit">%</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {info.get('disk', 0)}%; background-color: {disk_color};"></div></div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">TEMP</div>
+                    <div class="metric-value">{info.get('temp', 'N/A')}<span class="metric-unit">°C</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {min(temp_val, 100)}%; background-color: {temp_color};"></div></div>
+                </div>
+            </div>
+            <div class="card-footer">Última conexión: {tiempo_atras}</div>
+        </div>
+        """
+        # Limpieza agresiva: eliminamos saltos de línea y espacios extra para evitar que Markdown lo detecte como código
+        html_card = "".join([line.strip() for line in raw_html.split("\n")])
 
         with cols[i]:
-            with st.expander(f"{estado_icono} {servidor}", expanded=True):
-                st.metric(label="CPU", value=f"{info['cpu']}%")
-                st.progress(min(info['cpu']/100, 1.0))
+            # Renderizar tarjeta visual
+            st.markdown(html_card, unsafe_allow_html=True)
             
-                st.metric(label="Memoria RAM", value=f"{info['ram']}%")
-                st.progress(min(info['ram']/100, 1.0))
-
-                disk = info.get('disk') or 0.0
-                st.metric(label="Disco Principal", value=f"{disk}%")
-                st.progress(min(disk/100, 1.0))
-
-                temp = info.get('temp') or 0.0
-                if temp > 0:
-                    st.metric(label="Temperatura", value=f"{temp:.1f} °C")
-                    st.progress(min(temp/100, 1.0))
-                else:
-                    st.metric(label="Temperatura", value="N/A")
-                
-                st.caption(f"Estado: {tiempo_atras} ({timestamp_str} UTC)")
+            # Sección de detalles interactivos (oculta por defecto para limpieza)
+            with st.expander("📉 Historial y Acciones"):
                 
                 # Mostrar mensajes flash (éxito/error)
                 if f"msg_exito_{servidor}" in st.session_state:
