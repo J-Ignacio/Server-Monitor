@@ -8,7 +8,6 @@ import base64
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
-import textwrap
 
 # Asegurar que el directorio raíz está en el path para importar src.config
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -60,6 +59,12 @@ with st.sidebar:
     st.write("---")
     st.subheader("🕒 Sincronización")
     offset_manual = st.number_input("Ajuste de Horas", min_value=-24, max_value=24, value=0, step=1, help="Usa esto si los servidores salen Offline por diferencia de horario.")
+    
+    st.write("---")
+    st.subheader("⚙️ Preferencias")
+    # Control de frecuencia de actualización
+    frecuencia_refresh = st.slider("Velocidad de Actualización (s)", min_value=1, max_value=30, value=2, help="Tiempo de espera entre recargas.")
+    modo_compacto = st.toggle("Vista Compacta", value=False, help="Oculta barras de progreso para ahorrar espacio.")
 
     st.write("---")
     st.caption("v2.0 - Diseño NOC Profesional")
@@ -92,14 +97,21 @@ custom_css = """
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
     
     .server-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(255, 255, 255, 0.2);
-        box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+        transform: translateY(-5px) scale(1.01);
+        border-color: rgba(0, 255, 157, 0.4);
+        box-shadow: 0 15px 40px 0 rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 255, 157, 0.1);
+        background: rgba(255, 255, 255, 0.05);
     }
+    
+    /* Modo Compacto */
+    .server-card.compact .progress-track { display: none; }
+    .server-card.compact .metric-box { padding: 5px 10px; }
+    .server-card.compact .metric-value { font-size: 1rem; }
+    .server-card.compact { padding: 15px; }
 
     /* Header de la tarjeta */
     .card-header {
@@ -200,6 +212,22 @@ custom_css = """
         height: 100%;
         border-radius: 2px;
         transition: width 0.5s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Efecto de brillo animado (Shimmer) */
+    .progress-fill::after {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+        transform: translateX(-100%);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        100% { transform: translateX(100%); }
     }
 
     /* Footer de la tarjeta */
@@ -234,12 +262,65 @@ custom_css = """
     [data-testid="stExpander"] summary:hover {
         color: #fff !important;
     }
+
+    /* --- NUEVO: Estilos para el HUD (Panel Superior) --- */
+    .hud-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .hud-card {
+        flex: 1;
+        min-width: 140px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        transition: transform 0.2s;
+    }
+    .hud-card:hover {
+        transform: translateY(-3px);
+        background: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .hud-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+    .hud-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #aaa;
+        margin-top: 5px;
+    }
+    
+    /* Título con Gradiente */
+    .noc-title {
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(90deg, #00ff9d 0%, #00b8ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 10px;
+        text-shadow: 0 0 30px rgba(0, 255, 157, 0.2);
+    }
 </style>
 """
 
 st.markdown(custom_css, unsafe_allow_html=True)
 
-st.title("🖥️ Sistema de Monitoreo NOC")
+# Reemplazamos el título estándar por uno HTML con gradiente
+st.markdown('<div class="noc-title">🖥️ NOC MONITOR</div>', unsafe_allow_html=True)
 
 # Contenedor que se actualiza dinámicamente
 placeholder = st.empty()
@@ -247,6 +328,13 @@ placeholder = st.empty()
 # --- Lógica Principal (Sin bucle infinito) ---
 base_datos = obtener_datos()
 modo_interaccion = False # Flag para pausar recarga si hay menús abiertos
+
+# Mostrar estado de conexión en Sidebar
+with st.sidebar:
+    if base_datos:
+        st.success(f"✅ API Conectada ({len(base_datos)} equipos)")
+    else:
+        st.error("❌ API Desconectada")
 
 # Helper para callbacks de estado (evita problemas con rerun manual)
 def actualizar_estado(key, valor):
@@ -261,194 +349,257 @@ def enviar_orden(servidor):
         st.session_state[f"msg_error_{servidor}"] = f"Error: {e}"
     st.session_state[f"conf_{servidor}"] = False
 
+# Helper para colores de barras (Definido fuera del bucle para optimizar)
+def get_color(val):
+    if val < 60: return "#00ff9d" # Verde neón
+    if val < 85: return "#ffcc00" # Amarillo
+    return "#ff4d4d" # Rojo
+
 if base_datos:
     # Ordenar servidores alfabéticamente para mantener posición fija
     items_ordenados = sorted(base_datos.items())
 
-    # Crear columnas dinámicas por servidor
-    cols = st.columns(len(items_ordenados))
-        
-    alerta_critica = False
+    # --- PRE-CALCULO DE ESTADISTICAS (Para evitar parpadeo del HUD) ---
+    stats_total = len(items_ordenados)
+    stats_online = 0
+    stats_offline = 0
 
-    for i, (servidor, info) in enumerate(items_ordenados):
-        # Verificar umbral de alerta (> 90%)
-        if info['cpu'] > 90:
-            alerta_critica = True
-
-        # --- Cálculo de Estado (Online/Offline) ---
+    for _, info in items_ordenados:
         timestamp_str = info.get('timestamp', '')
-        
-        # Lógica de estado visual
-        status_class = "status-offline"
-        status_text = "OFFLINE"
-        tiempo_atras = "Desconocido"
+        is_online = False
         
         if timestamp_str:
             try:
-                # Parseo manual para máxima compatibilidad con SQLite (UTC naive)
                 if "." in timestamp_str:
                     last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
                 else:
                     last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                
+                now_utc = datetime.utcnow()
+                now_local = datetime.now()
+                diff_utc = (now_utc - last_seen).total_seconds()
+                diff_local = (now_local - last_seen).total_seconds()
+                diff = diff_utc if abs(diff_utc) < abs(diff_local) else diff_local
+                diff -= (offset_manual * 3600)
+                if diff < 0: diff = 0
+                
+                if diff < 60: # Consideramos online/lento como "Online" para el contador general
+                    is_online = True
+            except:
+                pass
+        
+        if is_online:
+            stats_online += 1
+        else:
+            stats_offline += 1
+
+    # --- Renderizar HUD (Panel Superior) ---
+    hud_html = f"""
+    <div class="hud-container">
+        <div class="hud-card">
+            <div class="hud-value">{stats_total}</div>
+            <div class="hud-label">Total Servidores</div>
+        </div>
+        <div class="hud-card" style="border-bottom: 3px solid #00ff9d;">
+            <div class="hud-value" style="color: #00ff9d;">{stats_online}</div>
+            <div class="hud-label">Online</div>
+        </div>
+        <div class="hud-card" style="border-bottom: 3px solid #ff4d4d;">
+            <div class="hud-value" style="color: #ff4d4d;">{stats_offline}</div>
+            <div class="hud-label">Offline</div>
+        </div>
+    </div>
+    """
+    st.markdown(hud_html, unsafe_allow_html=True)
+
+    # --- Lógica de Grid (Cuadrícula) ---
+    # En lugar de una columna por servidor, usamos filas de 3 columnas
+    COLUMNAS_POR_FILA = 3
+    filas = [items_ordenados[i:i + COLUMNAS_POR_FILA] for i in range(0, len(items_ordenados), COLUMNAS_POR_FILA)]
+        
+    alerta_critica = False
+
+    # Iteramos por filas para crear el grid
+    for fila in filas:
+        cols = st.columns(COLUMNAS_POR_FILA)
+        
+        for i, (servidor, info) in enumerate(fila):
+        # Verificar umbral de alerta (> 90%)
+            if info['cpu'] > 90:
+                alerta_critica = True
+
+            # --- Cálculo de Estado (Online/Offline) ---
+            timestamp_str = info.get('timestamp', '')
+        
+            # Lógica de estado visual
+            status_class = "status-offline"
+            status_text = "OFFLINE"
+            tiempo_atras = "Desconocido"
+        
+            if timestamp_str:
+                try:
+                # Parseo manual para máxima compatibilidad con SQLite (UTC naive)
+                    if "." in timestamp_str:
+                        last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+                    else:
+                        last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
 
                 # --- SMART SYNC: Auto-detectar zona horaria ---
                 # Comparamos contra UTC y contra Hora Local y nos quedamos con la diferencia menor.
-                now_utc = datetime.utcnow()
-                now_local = datetime.now()
-                
-                diff_utc = (now_utc - last_seen).total_seconds()
-                diff_local = (now_local - last_seen).total_seconds()
-                
-                # Elegir la diferencia más lógica (la más cercana a 0, sea positiva o negativa)
-                diff = diff_utc if abs(diff_utc) < abs(diff_local) else diff_local
-                
-                # Aplicar compensación manual del usuario (en segundos)
-                diff -= (offset_manual * 3600)
+                    now_utc = datetime.utcnow()
+                    now_local = datetime.now()
+                    
+                    diff_utc = (now_utc - last_seen).total_seconds()
+                    diff_local = (now_local - last_seen).total_seconds()
+                    
+                    # Elegir la diferencia más lógica (la más cercana a 0, sea positiva o negativa)
+                    diff = diff_utc if abs(diff_utc) < abs(diff_local) else diff_local
+                    
+                    # Aplicar compensación manual del usuario (en segundos)
+                    diff -= (offset_manual * 3600)
 
-                # Si el dato viene del "futuro" (relojes desajustados), lo tratamos como "ahora mismo"
-                if diff < 0: diff = 0
-                
-                # Formato amigable de tiempo
-                if diff < 60: tiempo_atras = f"hace {int(diff)}s"
-                elif diff < 3600: tiempo_atras = f"hace {int(diff/60)}m"
-                elif diff < 86400: tiempo_atras = f"hace {int(diff/3600)}h"
-                else: tiempo_atras = f"hace {int(diff/3600)}h ({last_seen.strftime('%H:%M')})"
-                
-                # Umbral de tolerancia aumentado a 45s para evitar parpadeos
-                if diff < 45:
-                    status_class = "status-online"
-                    status_text = "ONLINE"
-                elif diff < 60:
-                    status_class = "status-warning"
-                    status_text = "LENTO"
-            except Exception as e:
-                tiempo_atras = "Error fecha"
+                    # Si el dato viene del "futuro" (relojes desajustados), lo tratamos como "ahora mismo"
+                    if diff < 0: diff = 0
+                    
+                    # Formato amigable de tiempo
+                    if diff < 60: tiempo_atras = f"hace {int(diff)}s"
+                    elif diff < 3600: tiempo_atras = f"hace {int(diff/60)}m"
+                    elif diff < 86400: tiempo_atras = f"hace {int(diff/3600)}h"
+                    else: tiempo_atras = f"hace {int(diff/3600)}h ({last_seen.strftime('%H:%M')})"
+                    
+                    # Umbral de tolerancia aumentado a 45s para evitar parpadeos
+                    if diff < 45:
+                        status_class = "status-online"
+                        status_text = "ONLINE"
+                    elif diff < 60:
+                        status_class = "status-warning"
+                        status_text = "LENTO"
+                except Exception as e:
+                    tiempo_atras = "Error fecha"
 
-        # Helper para colores de barras
-        def get_color(val):
-            if val < 60: return "#00ff9d" # Verde neón
-            if val < 85: return "#ffcc00" # Amarillo
-            return "#ff4d4d" # Rojo
+            cpu_color = get_color(info['cpu'])
+            ram_color = get_color(info['ram'])
+            disk_color = get_color(info.get('disk', 0))
+            temp_val = info.get('temp', 0)
+            temp_color = get_color(temp_val if temp_val > 0 else 0)
 
-        cpu_color = get_color(info['cpu'])
-        ram_color = get_color(info['ram'])
-        disk_color = get_color(info.get('disk', 0))
-        temp_val = info.get('temp', 0)
-        temp_color = get_color(temp_val if temp_val > 0 else 0)
+            # Clase extra para modo compacto
+            css_compacto = "compact" if modo_compacto else ""
 
-        # --- Construcción de Tarjeta HTML ---
-        # Definimos el HTML con indentación normal para legibilidad en el código
-        raw_html = f"""
-        <div class="server-card">
-            <div class="card-header">
-                <div class="server-title">
-                    <span class="status-indicator {status_class}"></span>
-                    {servidor}
+            # --- Construcción de Tarjeta HTML ---
+            raw_html = f"""
+            <div class="server-card {css_compacto}">
+                <div class="card-header">
+                    <div class="server-title">
+                        <span class="status-indicator {status_class}"></span>
+                        {servidor}
+                    </div>
+                    <div style="font-size: 0.8rem; color: #666;">{status_text}</div>
                 </div>
-                <div style="font-size: 0.8rem; color: #666;">{status_text}</div>
+                
+                <div class="metrics-container">
+                    <div class="metric-box">
+                        <div class="metric-label">CPU</div>
+                        <div class="metric-value">{info['cpu']}<span class="metric-unit">%</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width: {info['cpu']}%; background-color: {cpu_color};"></div></div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">RAM</div>
+                        <div class="metric-value">{info['ram']}<span class="metric-unit">%</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width: {info['ram']}%; background-color: {ram_color};"></div></div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">DISCO</div>
+                        <div class="metric-value">{info.get('disk', 0)}<span class="metric-unit">%</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width: {info.get('disk', 0)}%; background-color: {disk_color};"></div></div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">TEMP</div>
+                        <div class="metric-value">{info.get('temp', 'N/A')}<span class="metric-unit">°C</span></div>
+                        <div class="progress-track"><div class="progress-fill" style="width: {min(temp_val, 100)}%; background-color: {temp_color};"></div></div>
+                    </div>
+                </div>
+                <div class="card-footer">Última conexión: {tiempo_atras}</div>
             </div>
-            
-            <div class="metrics-container">
-                <div class="metric-box">
-                    <div class="metric-label">CPU</div>
-                    <div class="metric-value">{info['cpu']}<span class="metric-unit">%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: {info['cpu']}%; background-color: {cpu_color};"></div></div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">RAM</div>
-                    <div class="metric-value">{info['ram']}<span class="metric-unit">%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: {info['ram']}%; background-color: {ram_color};"></div></div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">DISCO</div>
-                    <div class="metric-value">{info.get('disk', 0)}<span class="metric-unit">%</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: {info.get('disk', 0)}%; background-color: {disk_color};"></div></div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">TEMP</div>
-                    <div class="metric-value">{info.get('temp', 'N/A')}<span class="metric-unit">°C</span></div>
-                    <div class="progress-track"><div class="progress-fill" style="width: {min(temp_val, 100)}%; background-color: {temp_color};"></div></div>
-                </div>
-            </div>
-            <div class="card-footer">Última conexión: {tiempo_atras}</div>
-        </div>
-        """
-        # Limpieza agresiva: eliminamos saltos de línea y espacios extra para evitar que Markdown lo detecte como código
-        html_card = "".join([line.strip() for line in raw_html.split("\n")])
+            """
+            # Limpieza agresiva: eliminamos saltos de línea y espacios extra para evitar que Markdown lo detecte como código
+            html_card = "".join([line.strip() for line in raw_html.split("\n")])
 
-        with cols[i]:
-            # Renderizar tarjeta visual
-            st.markdown(html_card, unsafe_allow_html=True)
-            
-            # Sección de detalles interactivos (oculta por defecto para limpieza)
-            with st.expander("📉 Historial y Acciones"):
+            with cols[i]:
+                # Renderizar tarjeta visual
+                st.markdown(html_card, unsafe_allow_html=True)
                 
-                # Mostrar mensajes flash (éxito/error)
-                if f"msg_exito_{servidor}" in st.session_state:
-                    st.success(st.session_state.pop(f"msg_exito_{servidor}"))
-                if f"msg_error_{servidor}" in st.session_state:
-                    st.error(st.session_state.pop(f"msg_error_{servidor}"))
+                # Sección de detalles interactivos (oculta por defecto para limpieza)
+                with st.expander("📉 Historial y Acciones"):
+                    
+                    # Mostrar mensajes flash (éxito/error)
+                    if f"msg_exito_{servidor}" in st.session_state:
+                        st.success(st.session_state.pop(f"msg_exito_{servidor}"))
+                    if f"msg_error_{servidor}" in st.session_state:
+                        st.error(st.session_state.pop(f"msg_error_{servidor}"))
 
-                # --- Botón de Reinicio con Confirmación ---
-                # Usamos un contenedor vacío para asegurar que los botones se reemplacen limpiamente
-                contenedor_botones = st.empty()
-                
-                if f"conf_{servidor}" not in st.session_state:
-                    st.session_state[f"conf_{servidor}"] = False
+                    # --- Botón de Reinicio con Confirmación ---
+                    # Usamos un contenedor vacío para asegurar que los botones se reemplacen limpiamente
+                    contenedor_botones = st.empty()
+                    
+                    if f"conf_{servidor}" not in st.session_state:
+                        st.session_state[f"conf_{servidor}"] = False
 
-                with contenedor_botones.container():
-                    if not st.session_state[f"conf_{servidor}"]:
-                        st.button("🔄 Reiniciar Servidor", key=f"btn_ask_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", True))
-                    else:
-                        modo_interaccion = True # Usuario decidiendo, pausar refresh
-                        st.warning("¿Estás seguro?")
-                        col_si, col_no = st.columns(2)
-                        with col_si:
-                            st.button("✅ Sí", key=f"btn_yes_{servidor}", on_click=enviar_orden, args=(servidor,))
-                        with col_no:
-                            st.button("❌ No", key=f"btn_no_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", False))
+                    with contenedor_botones.container():
+                        if not st.session_state[f"conf_{servidor}"]:
+                            st.button("🔄 Reiniciar Servidor", key=f"btn_ask_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", True))
+                        else:
+                            modo_interaccion = True # Usuario decidiendo, pausar refresh
+                            st.warning("¿Estás seguro?")
+                            col_si, col_no = st.columns(2)
+                            with col_si:
+                                st.button("✅ Sí", key=f"btn_yes_{servidor}", on_click=enviar_orden, args=(servidor,))
+                            with col_no:
+                                st.button("❌ No", key=f"btn_no_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", False))
 
-                # --- Gráfico Histórico ---
-                try:
-                    protocolo = "https" if USAR_SSL else "http"
-                    url_hist = f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
-                    resp = requests.get(url_hist, timeout=1, verify=VERIFICAR_SSL)
-                    if resp.status_code == 200:
-                        datos_hist = resp.json()
-                        if datos_hist:
-                            df = pd.DataFrame(datos_hist)
-                            # Convertir timestamp a fecha/hora para el eje X
-                            df["timestamp"] = pd.to_datetime(df["timestamp"])
-                            
-                            # Definir columnas a graficar dinámicamente (solo si existen)
-                            cols_grafico = ["cpu", "ram"]
-                            if "temp" in df.columns:
-                                cols_grafico.append("temp")
-                            if "disk" in df.columns:
-                                cols_grafico.append("disk")
-
-                            # Graficar CPU y RAM para ver la tendencia de la última hora
-                            st.line_chart(df.set_index("timestamp")[cols_grafico], height=200)
-                except requests.exceptions.RequestException:
-                    # Si falla la petición (timeout, error de red), muestra este mensaje.
-                    st.caption("Cargando historial...")
-            
-            # --- Trigger de Alerta (Audio + Visual) ---
-            if alerta_critica:
-                st.error("🔥 ¡ALERTA CRÍTICA! Uso de CPU superior al 90% detectado.")
-                sound_file = "alert.mp3"
-                if os.path.exists(sound_file):
+                    # --- Gráfico Histórico ---
                     try:
-                        with open(sound_file, "rb") as f:
-                            data = f.read()
-                            b64 = base64.b64encode(data).decode()
-                            st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-                    except Exception:
-                        pass
+                        protocolo = "https" if USAR_SSL else "http"
+                        url_hist = f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/historial/{servidor}"
+                        resp = requests.get(url_hist, timeout=1, verify=VERIFICAR_SSL)
+                        if resp.status_code == 200:
+                            datos_hist = resp.json()
+                            if datos_hist:
+                                df = pd.DataFrame(datos_hist)
+                                # Convertir timestamp a fecha/hora para el eje X
+                                df["timestamp"] = pd.to_datetime(df["timestamp"])
+                                
+                                # Definir columnas a graficar dinámicamente (solo si existen)
+                                cols_grafico = ["cpu", "ram"]
+                                if "temp" in df.columns:
+                                    cols_grafico.append("temp")
+                                if "disk" in df.columns:
+                                    cols_grafico.append("disk")
+
+                                # Graficar CPU y RAM para ver la tendencia de la última hora
+                                st.line_chart(df.set_index("timestamp")[cols_grafico], height=200)
+                    except requests.exceptions.RequestException:
+                        # Si falla la petición (timeout, error de red), muestra este mensaje.
+                        st.caption("Cargando historial...")
+            
+    # --- Trigger de Alerta Global (Audio + Visual) ---
+    # Se ejecuta una sola vez al final si algún servidor activó la bandera
+    if alerta_critica:
+        st.toast("🔥 ¡ALERTA CRÍTICA! CPU > 90% detectado", icon="🔥")
+        sound_file = "alert.mp3"
+        if os.path.exists(sound_file):
+            try:
+                with open(sound_file, "rb") as f:
+                    data = f.read()
+                    b64 = base64.b64encode(data).decode()
+                    st.markdown(f'<audio autoplay="true"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+            except Exception:
+                pass
+    
 else:
     st.info("Esperando conexión de agentes remotos...")
 
 # Recarga automática de la página
 if not locals().get("modo_interaccion", False):
-    time.sleep(DASHBOARD_INTERVALO)
+    time.sleep(frecuencia_refresh)
     rerun()
