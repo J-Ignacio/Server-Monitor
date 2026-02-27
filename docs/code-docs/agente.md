@@ -20,8 +20,10 @@ import urllib3
 # Intento de importar WMI para soporte de temperatura en Windows
 try:
     import wmi
+    import pythoncom
 except ImportError:
     wmi = None
+    pythoncom = None
 
 try:
     from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR
@@ -68,9 +70,9 @@ def obtener_temperatura():
     # 1. Estrategia Windows: WMI
     if wmi:
         try:
-            # Opción A: OpenHardwareMonitor (Requiere app corriendo)
-            # Namespace: root\OpenHardwareMonitor
-            ohm = wmi.WMI(namespace="root\\OpenHardwareMonitor")
+            # Opción A: OpenHardwareMonitor / LibreHardwareMonitor
+            # Namespaces: root\OpenHardwareMonitor, root\LibreHardwareMonitor
+            ohm = wmi.WMI(namespace="root\\OpenHardwareMonitor") # Se prueba ambos en bucle
             sensors = ohm.Sensor()
             for sensor in sensors:
                 if sensor.SensorType == 'Temperature' and 'CPU' in sensor.Name:
@@ -101,6 +103,12 @@ def obtener_temperatura():
     
     return 0.0
 
+def ejecutar_diagnostico():
+    """Imprime en consola qué sensores se detectan al iniciar"""
+    print("\n🔍 --- DIAGNÓSTICO DE SENSORES ---")
+    # ... lógica de detección de WMI y sensores ...
+    print("-----------------------------------\n")
+
 def enviar_datos(stop_event=None):
     """Recopila métricas y las envía al servidor central con lógica de reintentos."""
     configurar_logger()
@@ -108,6 +116,12 @@ def enviar_datos(stop_event=None):
     hostname = socket.gethostname().strip()
     ip_real = obtener_ip_real().strip()
     ID_SERVIDOR = f"{hostname} ({ip_real})"
+
+    # Inicializar COM para WMI (Vital para hilos/servicios)
+    if wmi and pythoncom:
+        try:
+            pythoncom.CoInitialize()
+        except: pass
 
     # Silenciar advertencias de SSL si la verificación está desactivada
     if not VERIFICAR_SSL:
@@ -120,6 +134,9 @@ def enviar_datos(stop_event=None):
     logging.info(f"🚀 Agente iniciado: {ID_SERVIDOR}")
     logging.info(f"📡 Reportando a: {URL_REPORTAR}")
     logging.info(f"⏱️  Intervalo: {AGENTE_INTERVALO}s | Temp: {'WMI' if wmi else 'Nativo'}")
+
+    # Ejecutar diagnóstico visual al arrancar
+    ejecutar_diagnostico()
 
     intentos_fallidos = 0
     

@@ -35,23 +35,21 @@ l    # Logo de la empresa
         except Exception as e:
             st.error(f"Error: {e}")
             
-    st.header("⚙️ Configuración")
-    tema_oscuro = st.toggle("Modo Oscuro", value=True)
+    st.subheader("⚙️ Preferencias")
+    frecuencia_refresh = st.slider("Velocidad de Actualización (s)", min_value=1, max_value=30, value=2)
+    modo_compacto = st.toggle("Vista Compacta", value=False)
 
-# Inyectar CSS dinámico según el estado del toggle
-if tema_oscuro:
-    custom_css = """
-    <style>
-        .stApp { background-color: #0e1117; color: #ffffff; }
-        h1, h2, h3, p, .stMarkdown, [data-testid="stMetricValue"] { color: #ffffff !important; }
-        [data-testid="stExpander"] summary { background-color: #262730 !important; color: #ffffff !important; }
-    </style>
-    """
-else:
-    custom_css = "<style>.stApp { background-color: #ffffff; }</style>"
+# --- CSS Estilo Glassmorphism / Dark NOC ---
+custom_css = """
+<style>
+    /* Estilos personalizados para efecto cristal y modo oscuro profesional */
+    .stApp { background-color: #050505; ... }
+    .server-card { background: rgba(255, 255, 255, 0.03); ... }
+</style>
+"""
 
 st.markdown(custom_css, unsafe_allow_html=True)
-st.title("🖥️ Sistema de Monitoreo NOC")
+st.markdown('<div class="noc-title">🖥️ NOC MONITOR</div>', unsafe_allow_html=True)
 ```
 
 - `st.set_page_config(layout="wide")`: Aprovecha todo el ancho de la pantalla, ideal para visualizar múltiples servidores en columnas.

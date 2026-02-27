@@ -22,7 +22,6 @@ class Metricas(BaseModel):
     ram: float         # Valor numérico porcentual
     temp: float        # Temperatura en Celsius
     disk: float        # % de uso de Disco (Partición Principal)
-    disk: float        # % de uso de Disco (Partición Principal)
 ```
 
 - Validación Automática: Si un agente envía accidentalmente un texto en lugar de un número en `cpu`, FastAPI rechazará la petición con un error `422 Unprocessable Entity` antes de que llegue a la base de datos.
