@@ -8,7 +8,7 @@ import base64
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
-
+ 
 # Asegurar que el directorio raíz está en el path para importar src.config
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
