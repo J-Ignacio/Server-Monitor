@@ -366,6 +366,11 @@ if base_datos:
 
     for _, info in items_ordenados:
         timestamp_str = info.get('timestamp', '')
+        
+        # Valores por defecto para la UI
+        info['_status_class'] = "status-offline"
+        info['_status_text'] = "OFFLINE"
+        info['_tiempo_atras'] = "Desconocido"
         is_online = False
         
         if timestamp_str:
@@ -383,10 +388,22 @@ if base_datos:
                 diff -= (offset_manual * 3600)
                 if diff < 0: diff = 0
                 
-                if diff < 60: # Consideramos online/lento como "Online" para el contador general
+                # Formato amigable de tiempo
+                if diff < 60: info['_tiempo_atras'] = f"hace {int(diff)}s"
+                elif diff < 3600: info['_tiempo_atras'] = f"hace {int(diff/60)}m"
+                elif diff < 86400: info['_tiempo_atras'] = f"hace {int(diff/3600)}h"
+                else: info['_tiempo_atras'] = f"hace {int(diff/3600)}h ({last_seen.strftime('%H:%M')})"
+
+                if diff < 45:
+                    info['_status_class'] = "status-online"
+                    info['_status_text'] = "ONLINE"
+                    is_online = True
+                elif diff < 60:
+                    info['_status_class'] = "status-warning"
+                    info['_status_text'] = "LENTO"
                     is_online = True
             except:
-                pass
+                info['_tiempo_atras'] = "Error fecha"
         
         if is_online:
             stats_online += 1
@@ -428,54 +445,10 @@ if base_datos:
             if info['cpu'] > 90:
                 alerta_critica = True
 
-            # --- Cálculo de Estado (Online/Offline) ---
-            timestamp_str = info.get('timestamp', '')
-        
-            # Lógica de estado visual
-            status_class = "status-offline"
-            status_text = "OFFLINE"
-            tiempo_atras = "Desconocido"
-        
-            if timestamp_str:
-                try:
-                # Parseo manual para máxima compatibilidad con SQLite (UTC naive)
-                    if "." in timestamp_str:
-                        last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
-                    else:
-                        last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-
-                # --- SMART SYNC: Auto-detectar zona horaria ---
-                # Comparamos contra UTC y contra Hora Local y nos quedamos con la diferencia menor.
-                    now_utc = datetime.utcnow()
-                    now_local = datetime.now()
-                    
-                    diff_utc = (now_utc - last_seen).total_seconds()
-                    diff_local = (now_local - last_seen).total_seconds()
-                    
-                    # Elegir la diferencia más lógica (la más cercana a 0, sea positiva o negativa)
-                    diff = diff_utc if abs(diff_utc) < abs(diff_local) else diff_local
-                    
-                    # Aplicar compensación manual del usuario (en segundos)
-                    diff -= (offset_manual * 3600)
-
-                    # Si el dato viene del "futuro" (relojes desajustados), lo tratamos como "ahora mismo"
-                    if diff < 0: diff = 0
-                    
-                    # Formato amigable de tiempo
-                    if diff < 60: tiempo_atras = f"hace {int(diff)}s"
-                    elif diff < 3600: tiempo_atras = f"hace {int(diff/60)}m"
-                    elif diff < 86400: tiempo_atras = f"hace {int(diff/3600)}h"
-                    else: tiempo_atras = f"hace {int(diff/3600)}h ({last_seen.strftime('%H:%M')})"
-                    
-                    # Umbral de tolerancia aumentado a 45s para evitar parpadeos
-                    if diff < 45:
-                        status_class = "status-online"
-                        status_text = "ONLINE"
-                    elif diff < 60:
-                        status_class = "status-warning"
-                        status_text = "LENTO"
-                except Exception as e:
-                    tiempo_atras = "Error fecha"
+            # --- Lectura de Estado Pre-calculado ---
+            status_class = info.get('_status_class', 'status-offline')
+            status_text = info.get('_status_text', 'OFFLINE')
+            tiempo_atras = info.get('_tiempo_atras', 'Desconocido')
 
             cpu_color = get_color(info['cpu'])
             ram_color = get_color(info['ram'])
