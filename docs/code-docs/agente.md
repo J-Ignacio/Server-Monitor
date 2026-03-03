@@ -3,6 +3,10 @@
 Este documento detalla el funcionamiento del Agente de Monitoreo, incluyendo tanto la lógica de recolección de datos (`agente.py`) como el wrapper para ejecutarse como Servicio de Windows (`agente_servicio.py`).
 
 ## 1. Código Fuente Completo: Lógica del Agente (`src/agente.py`)
+## 1. Lógica del Agente (`src/agente.py`)
+
+### 1.1. Configuración y Logging
+El agente inicia cargando la configuración y estableciendo el sistema de logs. También detecta la IP real de la máquina para identificarse correctamente ante el servidor.
 
 ```python
 """Agente remoto: recopila métricas del servidor y las envía a la central"""
@@ -16,6 +20,8 @@ from pathlib import Path
 import logging
 from logging.handlers import RotatingFileHandler
 import urllib3
+# ... imports ...
+from config import URL_REPORTAR, AGENTE_INTERVALO, ...
 
 # Intento de importar WMI para soporte de temperatura en Windows
 try:
@@ -64,10 +70,16 @@ def obtener_ip_real():
     finally:
         s.close()
     return IP
+```
 
+### 1.2. Sensores de Temperatura (WMI vs psutil)
+Esta es la lógica más compleja del agente. Windows no expone la temperatura de la CPU de forma nativa y sencilla.
+
+```python
 def obtener_temperatura():
     """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM)"""
     # 1. Estrategia Windows: WMI
+    # 1. Estrategia Windows: WMI (OpenHardwareMonitor o MSAcpi)
     if wmi:
         try:
             # Opción A: OpenHardwareMonitor / LibreHardwareMonitor
@@ -79,6 +91,10 @@ def obtener_temperatura():
                     return float(sensor.Value)
         except:
             pass # OHM no disponible
+            # Opción A: OpenHardwareMonitor
+            ohm = wmi.WMI(namespace="root\\OpenHardwareMonitor")
+            # ... iterar sensores ...
+        except: pass
 
         try:
             # Opción B: WMI Estándar (MSAcpi)
@@ -86,13 +102,17 @@ def obtener_temperatura():
             w = wmi.WMI(namespace="root\\wmi")
             temps = w.MSAcpi_ThermalZoneTemperature()
             if temps:
+                # Conversión de décimas de Kelvin a Celsius
+                # (K - 273.2)
                 kelvin = temps[0].CurrentTemperature
                 celsius = (kelvin - 2732) / 10.0
                 if celsius > 0: return celsius
         except:
             pass
+        except: pass
 
     # 2. Estrategia General: psutil
+    # 2. Estrategia General: psutil (Linux/Mac)
     try:
         temps = psutil.sensors_temperatures()
         if temps:
@@ -100,18 +120,28 @@ def obtener_temperatura():
             return next(iter(temps.values()))[0].current
     except:
         pass
+        if temps: return next(iter(temps.values()))[0].current
+    except: pass
     
     return 0.0
+```
 
 def ejecutar_diagnostico():
     """Imprime en consola qué sensores se detectan al iniciar"""
     print("\n🔍 --- DIAGNÓSTICO DE SENSORES ---")
     # ... lógica de detección de WMI y sensores ...
     print("-----------------------------------\n")
+- **Prioridad:** Se prioriza WMI sobre `psutil` en Windows.
+- **Matemática de Precisión:** El cálculo `(K - 2732) / 10.0` es fundamental ya que los sensores térmicos bajo el estándar ACPI suelen devolver valores en $10^{-1}$ Kelvin.
 
+### 1.3. Bucle de Telemetría y Resiliencia
+El núcleo del agente. Captura datos, los envía y maneja errores de red sin detenerse.
+
+```python
 def enviar_datos(stop_event=None):
     """Recopila métricas y las envía al servidor central con lógica de reintentos."""
     configurar_logger()
+    # ... inicialización de COM y SSL ...
     
     hostname = socket.gethostname().strip()
     ip_real = obtener_ip_real().strip()
@@ -143,6 +173,7 @@ def enviar_datos(stop_event=None):
     while True:
         if stop_event and stop_event.is_set():
             break
+        if stop_event and stop_event.is_set(): break
 
         try:
             metricas = {
@@ -242,6 +273,9 @@ def enviar_datos():
                 intentos_fallidos = 0
             else:
                 intentos_fallidos += 1
+            # Gestión de Comandos Remotos (Reinicio)
+            if response.json().get("comando") == "reiniciar":
+                os.system("shutdown /r /t 0 /f")
 
         except (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError):
             # Lógica de reintento exponencial o espera
@@ -250,12 +284,17 @@ def enviar_datos():
                 print(f"✗ Servidor inalcanzable. Esperando {AGENTE_ESPERA_REINTENTO}s...")
                 intentos_fallidos = 0 # Reinicio del contador para evitar overflow
                 time.sleep(AGENTE_ESPERA_REINTENTO)
+        except (requests.exceptions.ConnectionError, ...):
+            # Lógica de reintento exponencial
+            time.sleep(AGENTE_ESPERA_REINTENTO)
         
         time.sleep(AGENTE_INTERVALO)
 
 ```
 
 - Métrica de CPU: `psutil.cpu_percent(interval=1)` es vital. Si el intervalo fuera 0, la métrica sería un pico instantáneo sin valor estadístico. Un segundo permite promediar los ciclos de los hilos de ejecución.
+- **Métrica de CPU:** `psutil.cpu_percent(interval=1)` bloquea la ejecución por 1 segundo para calcular el promedio real de uso.
+- **Gestión de Red:** Se capturan excepciones específicas para evitar que el agente colapse ante micro-cortes.
 
 - Gestión de Red: Se capturan excepciones específicas de `requests`. Esto evita que el agente colapse ante micro-cortes de internet o reinicios programados del servidor central.
 
@@ -263,6 +302,7 @@ def enviar_datos():
 
 Protección del flujo de ejecución principal.
 
+### 1.4. Punto de Entrada
 ```python
 if __name__ == "__main__":
     try:
@@ -270,10 +310,12 @@ if __name__ == "__main__":
     except Exception as e:
         # Captura cualquier error no controlado para evitar cierre súbito de terminal
         print(f"\n[ERROR CRÍTICO] El agente se detuvo: {e}")
+        print(f"\n[ERROR] El agente se detuvo: {e}")
         input("Presione ENTER para salir...")
 ```
 
 ### 6. Ejecución como Servicio de Windows
+## 2. Servicio de Windows (`src/agente_servicio.py`)
 
 Para entornos de producción, el agente se ejecuta como un servicio en segundo plano.
 
