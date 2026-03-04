@@ -1,6 +1,6 @@
 {
     "servidor_central": {
-        "ip": "192.168.4.138",
+        "ip": "192.168.4.100",
         "puerto": 8000,
         "host": "0.0.0.0"
     },
@@ -8,11 +8,12 @@
         "intervalo_envio": 5,
         "timeout": 5,
         "reintentos": 3,
-        "espera_reintento": 5
+        "espera_reintento": 5,
+        "ip_manual": ""
     },
     "dashboard": {
         "intervalo_actualizacion": 2,
-        "host": "localhost",        
+        "host": "localhost",
         "puerto": 8501
     },
     "sistema": {
@@ -21,12 +22,12 @@
         "archivo_log": "logs/sistema.log"
     },
     "email": {
-        "habilitado": true,
+        "habilitado": false,
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
-        "usuario": "jignaciochavezleiva@gmail.com",
-        "password": "kwfcdprgncrsqerm",
-        "destinatario": "jignaciochavezleiva@gmail.com"
+        "usuario": "tu_correo@gmail.com",
+        "password": "tu_contraseña_de_aplicacion",
+        "destinatario": "admin@empresa.com"
     },
     "seguridad": {
         "usar_ssl": false,

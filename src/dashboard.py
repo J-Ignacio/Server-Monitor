@@ -8,11 +8,12 @@ import base64
 import sys
 from pathlib import Path
 from datetime import datetime, timezone
+import sqlite3
  
 # Asegurar que el directorio raíz está en el path para importar src.config
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL, BASE_DIR
+from src.config import DASHBOARD_INTERVALO, SERVIDOR_CENTRAL_PUERTO, USAR_SSL, VERIFICAR_SSL, BASE_DIR, DB_FILE
 
 # Función auxiliar para recargar la página (compatible con versiones antiguas)
 def rerun():
@@ -65,6 +66,22 @@ with st.sidebar:
     # Control de frecuencia de actualización
     frecuencia_refresh = st.slider("Velocidad de Actualización (s)", min_value=1, max_value=30, value=2, help="Tiempo de espera entre recargas.")
     modo_compacto = st.toggle("Vista Compacta", value=False, help="Oculta barras de progreso para ahorrar espacio.")
+
+    # --- Zona de Peligro (Borrado Masivo) ---
+    st.write("---")
+    with st.expander("⚠️ Zona de Peligro"):
+        if st.button("🔥 Borrar TODOS los servidores", help="Elimina todo el historial y servidores de la base de datos."):
+            try:
+                conn = sqlite3.connect(str(DB_FILE))
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM metricas")
+                conn.commit()
+                conn.close()
+                st.success("Base de datos vaciada.")
+                time.sleep(1)
+                rerun()
+            except Exception as e:
+                st.error(f"Error: {e}")
 
     st.write("---")
     st.caption("v2.0 - Diseño NOC Profesional")
@@ -554,6 +571,21 @@ if base_datos:
                     except requests.exceptions.RequestException:
                         # Si falla la petición (timeout, error de red), muestra este mensaje.
                         st.caption("Cargando historial...")
+
+                    # --- Botón de Eliminación (Base de Datos) ---
+                    st.write("---")
+                    if st.button("🗑️ Eliminar Registro", key=f"btn_del_{servidor}", help="Borra este servidor de la base de datos"):
+                        try:
+                            conn = sqlite3.connect(str(DB_FILE))
+                            cursor = conn.cursor()
+                            cursor.execute("DELETE FROM metricas WHERE id_servidor = ?", (servidor,))
+                            conn.commit()
+                            conn.close()
+                            st.success(f"Eliminado: {servidor}")
+                            time.sleep(1)
+                            rerun()
+                        except Exception as e:
+                            st.error(f"Error al eliminar: {e}")
             
     # --- Trigger de Alerta Global (Audio + Visual) ---
     # Se ejecuta una sola vez al final si algún servidor activó la bandera

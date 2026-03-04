@@ -40,7 +40,8 @@ CONFIGURACION_PREDETERMINADA = {
         "intervalo_envio": 5,  # segundos
         "timeout": 5,  # segundos
         "reintentos": 3,
-        "espera_reintento": 5  # segundos
+        "espera_reintento": 5,  # segundos
+        "ip_manual": ""
     },
     "dashboard": {
         "intervalo_actualizacion": 2,  # segundos
@@ -143,6 +144,7 @@ AGENTE_INTERVALO = CONFIG["agente"]["intervalo_envio"]
 AGENTE_TIMEOUT = CONFIG["agente"]["timeout"]
 AGENTE_REINTENTOS = CONFIG["agente"]["reintentos"]
 AGENTE_ESPERA_REINTENTO = CONFIG["agente"]["espera_reintento"]
+AGENTE_IP_MANUAL = CONFIG["agente"].get("ip_manual", "")
 
 DASHBOARD_INTERVALO = CONFIG["dashboard"]["intervalo_actualizacion"]
 DASHBOARD_HOST = CONFIG["dashboard"]["host"]

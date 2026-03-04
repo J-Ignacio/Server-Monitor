@@ -19,7 +19,7 @@ except ImportError:
     pythoncom = None
 
 try:
-    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR
+    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR, AGENTE_IP_MANUAL
 except Exception as e:
     print(f"\n[ERROR FATAL] No se pudo cargar la configuración: {e}")
     print("Posible causa: Falta de permisos para crear 'config.json' o carpeta 'config'.")
@@ -48,6 +48,10 @@ def configurar_logger():
 # Detecta la IP real del servidor en la red local
 def obtener_ip_real():
     """Obtiene la IP local del servidor"""
+    # Si se configuró una IP manual, usarla directamente
+    if AGENTE_IP_MANUAL:
+        return AGENTE_IP_MANUAL
+
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(('8.8.8.8', 1))
