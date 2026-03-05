@@ -52,22 +52,33 @@ def obtener_ip_real():
     if AGENTE_IP_MANUAL:
         return AGENTE_IP_MANUAL
 
+    ips = set()
     try:
-        # Intentar conectar al servidor central para ver qué interfaz usa el OS
+        # 1. Intentar detectar la IP principal que llega al servidor
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect((SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO))
-        IP = s.getsockname()[0]
+        ips.add(s.getsockname()[0])
         s.close()
     except Exception:
-        # Fallback: Intentar Google DNS si falla lo anterior
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(('8.8.8.8', 1))
-            IP = s.getsockname()[0]
-            s.close()
-        except Exception:
-            IP = '127.0.0.1'
-    return IP
+        pass
+
+    # 2. Escanear todas las interfaces con psutil para encontrar otras IPs (ej. WiFi + Ethernet)
+    try:
+        for interface, snics in psutil.net_if_addrs().items():
+            for snic in snics:
+                if snic.family == socket.AF_INET:
+                    ip = snic.address
+                    # Filtrar localhost y direcciones de autoconfiguración (APIPA)
+                    if not ip.startswith("127.") and not ip.startswith("169.254."):
+                        ips.add(ip)
+    except Exception:
+        pass
+
+    if not ips:
+        return '127.0.0.1'
+
+    # Retornar todas las IPs encontradas, ordenadas y separadas
+    return " - ".join(sorted(list(ips)))
 
 def obtener_temperatura():
     """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM)"""
@@ -141,6 +152,18 @@ def ejecutar_diagnostico():
     if not encontrado:
         print(f"⚠️ No se detectó Open Hardware Monitor ni Libre Hardware Monitor activos.")
         print(f"   Asegúrate de ejecutarlo como Administrador.")
+
+    print("\n🔍 --- DIAGNÓSTICO DE RED ---")
+    try:
+        try:
+            print(f"   - IP Principal (Hostname): {socket.gethostbyname(socket.gethostname())}")
+        except: pass
+
+        for interface, snics in psutil.net_if_addrs().items():
+            for snic in snics:
+                if snic.family == socket.AF_INET:
+                    print(f"   - {interface}: {snic.address}")
+    except Exception: pass
     print("-----------------------------------\n")
 
 def enviar_datos(stop_event=None):
