@@ -19,7 +19,7 @@ except ImportError:
     pythoncom = None
 
 try:
-    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR, AGENTE_IP_MANUAL
+    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR, AGENTE_IP_MANUAL, SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO
 except Exception as e:
     print(f"\n[ERROR FATAL] No se pudo cargar la configuración: {e}")
     print("Posible causa: Falta de permisos para crear 'config.json' o carpeta 'config'.")
@@ -52,14 +52,21 @@ def obtener_ip_real():
     if AGENTE_IP_MANUAL:
         return AGENTE_IP_MANUAL
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        s.connect(('8.8.8.8', 1))
+        # Intentar conectar al servidor central para ver qué interfaz usa el OS
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect((SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO))
         IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
-    finally:
         s.close()
+    except Exception:
+        # Fallback: Intentar Google DNS si falla lo anterior
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8', 1))
+            IP = s.getsockname()[0]
+            s.close()
+        except Exception:
+            IP = '127.0.0.1'
     return IP
 
 def obtener_temperatura():

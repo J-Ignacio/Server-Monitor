@@ -1,0 +1,38 @@
+{
+    "servidor_central": {
+        "ip": "192.168.4.104",
+        "puerto": 8000,
+        "host": "0.0.0.0"
+    },
+    "agente": {
+        "intervalo_envio": 5,
+        "timeout": 5,
+        "reintentos": 3,
+        "espera_reintento": 5,
+        "ip_manual": ""
+    },
+    "dashboard": {
+        "intervalo_actualizacion": 2,
+        "host": "localhost",
+        "puerto": 8501
+    },
+    "sistema": {
+        "debug": false,
+        "logs_habilitados": true,
+        "archivo_log": "logs/sistema.log"
+    },
+    "email": {
+        "habilitado": false,
+        "smtp_server": "smtp.gmail.com",
+        "smtp_port": 587,
+        "usuario": "tu_correo@gmail.com",
+        "password": "tu_contraseña_de_aplicacion",
+        "destinatario": "admin@empresa.com"
+    },
+    "seguridad": {
+        "usar_ssl": false,
+        "archivo_cert": "certs/cert.pem",
+        "archivo_key": "certs/key.pem",
+        "verificar_ssl": false
+    }
+}
