@@ -1,4 +1,17 @@
-"""Agente remoto: recopila métricas del servidor y las envía a la central"""
+"""
+Remote Monitoring Agent Module.
+
+This module acts as an agent running on remote servers. It collects system metrics
+such as CPU usage, RAM utilization, temperature, and disk usage at a predefined
+interval. The collected metrics are then transmitted to the centralized monitoring
+server.
+
+Dependencies:
+    - psutil: For collecting system metrics.
+    - requests: For sending data to the centralized server.
+    - wmi (Optional): For advanced temperature reading on Windows systems.
+"""
+
 import psutil
 import requests
 import time
@@ -10,7 +23,6 @@ import logging
 from logging.handlers import RotatingFileHandler
 import urllib3
 
-# Intento de importar WMI para soporte de temperatura en Windows
 try:
     import wmi
     import pythoncom
@@ -19,24 +31,41 @@ except ImportError:
     pythoncom = None
 
 try:
-    from config import URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT, AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL, LOGS_HABILITADOS, BASE_DIR, AGENTE_IP_MANUAL, SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO
+    from config import (
+        URL_REPORTAR, AGENTE_INTERVALO, AGENTE_TIMEOUT,
+        AGENTE_REINTENTOS, AGENTE_ESPERA_REINTENTO, VERIFICAR_SSL,
+        LOGS_HABILITADOS, BASE_DIR, AGENTE_IP_MANUAL,
+        SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO
+    )
 except Exception as e:
-    print(f"\n[ERROR FATAL] No se pudo cargar la configuración: {e}")
-    print("Posible causa: Falta de permisos para crear 'config.json' o carpeta 'config'.")
-    input("Presione ENTER para salir...")
+    print(f"\n[FATAL ERROR] Failed to load configuration: {e}")
+    print("Potential cause: Insufficient permissions to read or create 'config.json' in 'config' directory.")
+    input("Press ENTER to exit...")
     sys.exit(1)
 
-# --- Configuración de Logging ---
-def configurar_logger():
-    handlers = [logging.StreamHandler(sys.stdout)] # Siempre mostrar en consola
+def configurar_logger() -> None:
+    """
+    Configures the application logger.
+
+    Sets up a stream handler to print logs to the console. If file logging is enabled
+    in the configuration, it additionally configures a rotating file handler that maintains
+    up to 3 backup files, each up to 1MB in size.
+    """
+    handlers = [logging.StreamHandler(sys.stdout)]
     
     if LOGS_HABILITADOS:
         log_dir = BASE_DIR / "logs"
         log_dir.mkdir(exist_ok=True)
         log_file = log_dir / "agente.log"
         
-        # Rota el archivo cuando llega a 1MB, guarda hasta 3 copias antiguas
-        handlers.append(RotatingFileHandler(str(log_file), maxBytes=1_000_000, backupCount=3, encoding='utf-8'))
+        handlers.append(
+            RotatingFileHandler(
+                str(log_file),
+                maxBytes=1_000_000,
+                backupCount=3,
+                encoding='utf-8'
+            )
+        )
 
     logging.basicConfig(
         level=logging.INFO,
@@ -45,16 +74,24 @@ def configurar_logger():
         handlers=handlers
     )
 
-# Detecta la IP real del servidor en la red local
-def obtener_ip_real():
-    """Obtiene la IP local del servidor"""
-    # Si se configuró una IP manual, usarla directamente
+def obtener_ip_real() -> str:
+    """
+    Detects the primary IP address of the local server.
+
+    If a manual IP address is configured, it returns that value immediately.
+    Otherwise, it attempts to connect to the central server to determine the primary
+    routing IP. It also scans all available network interfaces, filtering out loopback
+    and auto-configuration (APIPA) addresses, returning a concatenated string if multiple
+    valid addresses are discovered.
+
+    Returns:
+        str: The detected IP address or addresses of the server. Defaults to '127.0.0.1'.
+    """
     if AGENTE_IP_MANUAL:
         return AGENTE_IP_MANUAL
 
     ips = set()
     try:
-        # 1. Intentar detectar la IP principal que llega al servidor
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect((SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO))
         ips.add(s.getsockname()[0])
@@ -62,13 +99,11 @@ def obtener_ip_real():
     except Exception:
         pass
 
-    # 2. Escanear todas las interfaces con psutil para encontrar otras IPs (ej. WiFi + Ethernet)
     try:
         for interface, snics in psutil.net_if_addrs().items():
             for snic in snics:
                 if snic.family == socket.AF_INET:
                     ip = snic.address
-                    # Filtrar localhost y direcciones de autoconfiguración (APIPA)
                     if not ip.startswith("127.") and not ip.startswith("169.254."):
                         ips.add(ip)
     except Exception:
@@ -77,14 +112,21 @@ def obtener_ip_real():
     if not ips:
         return '127.0.0.1'
 
-    # Retornar todas las IPs encontradas, ordenadas y separadas
     return " - ".join(sorted(list(ips)))
 
-def obtener_temperatura():
-    """Intenta obtener la temperatura de la CPU (Soporta WMI/OHM)"""
-    # 1. Estrategia Windows: WMI
+def obtener_temperatura() -> float:
+    """
+    Retrieves the system CPU temperature.
+
+    Attempts multiple strategies for fetching the temperature:
+        1. WMI interface via OpenHardwareMonitor/LibreHardwareMonitor.
+        2. Standard WMI (MSAcpi_ThermalZoneTemperature).
+        3. Cross-platform `psutil` sensors (primarily for Linux).
+
+    Returns:
+        float: The detected temperature in degrees Celsius, or 0.0 if not found.
+    """
     if wmi:
-        # Probar OpenHardwareMonitor y LibreHardwareMonitor
         namespaces = ["root\\OpenHardwareMonitor", "root\\LibreHardwareMonitor"]
         for ns in namespaces:
             try:
@@ -92,41 +134,42 @@ def obtener_temperatura():
                 sensors = ohm.Sensor()
                 for sensor in sensors:
                     if sensor.SensorType == 'Temperature':
-                        # Búsqueda más flexible (CPU, Core, Package, Tctl, Tdie)
                         nombre = sensor.Name.upper()
                         if any(x in nombre for x in ['CPU', 'CORE', 'PACKAGE', 'TCTL', 'TDIE']):
                             return float(sensor.Value)
-            except:
+            except Exception:
                 continue
 
         try:
-            # Opción B: WMI Estándar (MSAcpi)
-            # Devuelve décimas de Kelvin. (K - 273.2) = Celsius
             w = wmi.WMI(namespace="root\\wmi")
             temps = w.MSAcpi_ThermalZoneTemperature()
             if temps:
                 kelvin = temps[0].CurrentTemperature
                 celsius = (kelvin - 2732) / 10.0
-                if celsius > 0: return celsius
-        except:
+                if celsius > 0:
+                    return celsius
+        except Exception:
             pass
 
-    # 2. Estrategia General: psutil
     try:
         temps = psutil.sensors_temperatures()
         if temps:
-            # Retorna la primera temperatura disponible
             return next(iter(temps.values()))[0].current
-    except:
+    except Exception:
         pass
     
     return 0.0
 
-def ejecutar_diagnostico():
-    """Imprime en consola qué sensores se detectan al iniciar"""
-    print("\n🔍 --- DIAGNÓSTICO DE SENSORES ---")
+def ejecutar_diagnostico() -> None:
+    """
+    Executes an initial system diagnostic to check hardware sensors and network state.
+
+    Prints diagnostic information to standard output, verifying WMI capabilities,
+    detected temperature sensors, and available network interfaces.
+    """
+    print("\n[DIAGNOSTIC] --- SENSOR DIAGNOSTIC ---")
     if not wmi:
-        print("❌ Librería 'wmi' no detectada.")
+        print("[Warning] 'wmi' library not detected.")
         return
 
     namespaces = ["root\\OpenHardwareMonitor", "root\\LibreHardwareMonitor"]
@@ -137,63 +180,72 @@ def ejecutar_diagnostico():
             ohm = wmi.WMI(namespace=ns)
             sensores = ohm.Sensor()
             if sensores:
-                print(f"✅ Conexión con {ns}: EXITOSA")
+                print(f"[Success] Connected to namespace {ns}.")
                 encontrado = True
                 temps = [s for s in sensores if s.SensorType == 'Temperature']
                 if temps:
-                    print("   Sensores de temperatura encontrados:")
+                    print("  Detected temperature sensors:")
                     for s in temps:
-                        print(f"   - Nombre: '{s.Name}' | Valor: {s.Value}°C")
+                        print(f"  - Name: '{s.Name}' | Value: {s.Value}°C")
                 else:
-                    print("   ⚠️ Conectado, pero NO hay sensores de temperatura.")
-        except:
+                    print("  [Warning] Connected, but no temperature sensors found.")
+        except Exception:
             pass
     
     if not encontrado:
-        print(f"⚠️ No se detectó Open Hardware Monitor ni Libre Hardware Monitor activos.")
-        print(f"   Asegúrate de ejecutarlo como Administrador.")
+        print("[Warning] Open/Libre Hardware Monitor instances not detected.")
+        print("  Ensure the software is running with Administrator privileges.")
 
-    print("\n🔍 --- DIAGNÓSTICO DE RED ---")
+    print("\n[DIAGNOSTIC] --- NETWORK DIAGNOSTIC ---")
     try:
         try:
-            print(f"   - IP Principal (Hostname): {socket.gethostbyname(socket.gethostname())}")
-        except: pass
+            print(f"  - Primary IP (Hostname): {socket.gethostbyname(socket.gethostname())}")
+        except Exception:
+            pass
 
         for interface, snics in psutil.net_if_addrs().items():
             for snic in snics:
                 if snic.family == socket.AF_INET:
-                    print(f"   - {interface}: {snic.address}")
-    except Exception: pass
+                    print(f"  - {interface}: {snic.address}")
+    except Exception:
+        pass
     print("-----------------------------------\n")
 
-def enviar_datos(stop_event=None):
-    """Recopila métricas y las envía al servidor central con lógica de reintentos."""
+def enviar_datos(stop_event=None) -> None:
+    """
+    Continuously collects and transmits system metrics to the centralized server.
+
+    Manages system diagnostics, initializes necessary components like COM for WMI,
+    and handles retries using defined configurations if network communication fails.
+    It can be terminated gracefully via the provided threading Event.
+
+    Args:
+        stop_event (threading.Event, optional): Event flag to trigger shutdown loop.
+    """
     configurar_logger()
 
-    # Inicializar COM para WMI al principio (Vital para evitar errores de inicialización)
     if wmi and pythoncom:
         try:
             pythoncom.CoInitialize()
-        except:
+        except Exception:
             pass
     
     hostname = socket.gethostname().strip()
     ip_real = obtener_ip_real().strip()
     ID_SERVIDOR = f"{hostname} ({ip_real})"
 
-    # Silenciar advertencias de SSL si la verificación está desactivada
     if not VERIFICAR_SSL:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    print(f"✓ Agente iniciado: {ID_SERVIDOR}")
-    print(f"✓ Reportando a: {URL_REPORTAR}")
-    print(f"⏱️  Intervalo de envío: {AGENTE_INTERVALO}s")
-    print(f"🌡️  Soporte Temperatura: {'ACTIVO (WMI)' if wmi else 'INACTIVO (Librería wmi no encontrada)'}")
-    logging.info(f"🚀 Agente iniciado: {ID_SERVIDOR}")
-    logging.info(f"📡 Reportando a: {URL_REPORTAR}")
-    logging.info(f"⏱️  Intervalo: {AGENTE_INTERVALO}s | Temp: {'WMI' if wmi else 'Nativo'}")
+    print(f"[Info] Agent started successfully: {ID_SERVIDOR}")
+    print(f"[Info] Reporting endpoint: {URL_REPORTAR}")
+    print(f"[Info] Interval configured: {AGENTE_INTERVALO}s")
+    print(f"[Info] Temperature Support: {'ACTIVE (WMI)' if wmi else 'INACTIVE (WMI library missing)'}")
 
-    # Ejecutar diagnóstico visual al arrancar
+    logging.info(f"Agent initiated: {ID_SERVIDOR}")
+    logging.info(f"Reporting URL: {URL_REPORTAR}")
+    logging.info(f"Interval: {AGENTE_INTERVALO}s | Temp Support: {'WMI' if wmi else 'Native'}")
+
     ejecutar_diagnostico()
 
     intentos_fallidos = 0
@@ -211,49 +263,53 @@ def enviar_datos(stop_event=None):
                 "disk": psutil.disk_usage(os.path.abspath(os.sep)).percent
             }
             
-            response = requests.post(URL_REPORTAR, json=metricas, timeout=AGENTE_TIMEOUT, verify=VERIFICAR_SSL)
-            response.raise_for_status()  # Lanza una excepción para códigos de error HTTP (4xx o 5xx)
+            response = requests.post(
+                URL_REPORTAR,
+                json=metricas,
+                timeout=AGENTE_TIMEOUT,
+                verify=VERIFICAR_SSL
+            )
+            response.raise_for_status()
             
-            # Verificar si el servidor nos envió un comando en la respuesta
             respuesta_json = response.json()
             if respuesta_json.get("comando") == "reiniciar":
-                print(f"⚠️  COMANDO RECIBIDO: Reiniciando servidor en 5 segundos...")
-                logging.warning(f"⚠️  COMANDO RECIBIDO: Reiniciando servidor en 5 segundos...")
+                print("[Alert] REBOOT COMMAND RECEIVED: Rebooting server in 5 seconds...")
+                logging.warning("[Alert] REBOOT COMMAND RECEIVED: Rebooting server in 5 seconds...")
                 time.sleep(5)
-                if os.name == 'nt': # Windows
+                if os.name == 'nt':
                     os.system("shutdown /r /t 0 /f")
-                else: # Linux / Otros
+                else:
                     os.system("shutdown -r now")
 
-            print(f"✓ Datos enviados - CPU: {metricas['cpu']:.1f}% | RAM: {metricas['ram']:.1f}% | Disk: {metricas['disk']:.1f}%")
-            logging.info(f"✓ Enviado - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}% | Disk: {metricas['disk']}% | Temp: {metricas['temp']:.1f}°C")
-            intentos_fallidos = 0 # Reiniciar contador en éxito
+            print(f"[Success] Data transmitted - CPU: {metricas['cpu']:.1f}% | RAM: {metricas['ram']:.1f}% | Disk: {metricas['disk']:.1f}%")
+            logging.info(f"Transmitted - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}% | Disk: {metricas['disk']}% | Temp: {metricas['temp']:.1f}°C")
+            intentos_fallidos = 0
 
         except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as e:
             intentos_fallidos += 1
-            msg_error = f"Error de conexión ({intentos_fallidos}/{AGENTE_REINTENTOS}): {e}"
+            msg_error = f"Connection error (Attempt {intentos_fallidos}/{AGENTE_REINTENTOS}): {e}"
             
             if isinstance(e, requests.exceptions.ConnectTimeout):
-                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Timeout. El servidor no responde.")
-                msg_error = "Timeout: El servidor central no responde."
+                print(f"[Warning] Attempt {intentos_fallidos}/{AGENTE_REINTENTOS}: Server timeout.")
+                msg_error = "Timeout: The central server is unresponsive."
             elif isinstance(e, requests.exceptions.ConnectionError):
-                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error de conexión. ¿Servidor encendido?")
+                print(f"[Warning] Attempt {intentos_fallidos}/{AGENTE_REINTENTOS}: Connection failure. Is the server online?")
             elif isinstance(e, requests.exceptions.HTTPError):
-                 print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error del servidor ({e.response.status_code}).")
+                 print(f"[Warning] Attempt {intentos_fallidos}/{AGENTE_REINTENTOS}: HTTP Server error ({e.response.status_code}).")
             else:
-                print(f"⚠️  Intento {intentos_fallidos}/{AGENTE_REINTENTOS}: Error de red: {e}")
-                msg_error = "Conexión rechazada: ¿El servidor central está encendido?"
+                print(f"[Warning] Attempt {intentos_fallidos}/{AGENTE_REINTENTOS}: Network anomaly: {e}")
+                msg_error = "Connection rejected."
             
-            logging.warning(f"⚠️ {msg_error}")
+            logging.warning(msg_error)
 
             if intentos_fallidos >= AGENTE_REINTENTOS:
-                print(f"✗ Se superó el máximo de reintentos. Esperando {AGENTE_ESPERA_REINTENTO}s...")
-                logging.error(f"✗ Límite de reintentos alcanzado. Pausando {AGENTE_ESPERA_REINTENTO}s...")
+                print(f"[Error] Max retries exceeded. Pausing for {AGENTE_ESPERA_REINTENTO}s...")
+                logging.error(f"Retry threshold breached. Pausing operations for {AGENTE_ESPERA_REINTENTO}s...")
                 time.sleep(AGENTE_ESPERA_REINTENTO)
-                intentos_fallidos = 0 # Reiniciar contador para el próximo ciclo
+                intentos_fallidos = 0
         except Exception as e:
-            print(f"⚠️ Ocurrió un error inesperado: {e}")
-            logging.exception(f"⚠️ Error inesperado: {e}")
+            print(f"[Error] Unexpected exception: {e}")
+            logging.exception(f"Unexpected exception encountered: {e}")
             
         if stop_event:
             if stop_event.wait(AGENTE_INTERVALO):
@@ -265,6 +321,6 @@ if __name__ == "__main__":
     try:
         enviar_datos()
     except Exception as e:
-        print(f"\n[ERROR] El agente se detuvo: {e}")
-        logging.critical(f"🛑 El agente se detuvo por error crítico: {e}")
-        input("Presione ENTER para salir...")
+        print(f"\n[CRITICAL ERROR] Agent halted unexpectedly: {e}")
+        logging.critical(f"Agent termination due to critical exception: {e}")
+        input("Press ENTER to exit...")

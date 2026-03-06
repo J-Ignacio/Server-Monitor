@@ -1,97 +1,90 @@
-# ⚡ Referencia Rápida (Cheat Sheet)
+# Quick Reference Guide
 
-## Ejecución (Lo Más Importante)
+## Core Execution
 
-### Central
+### Central Server Initialization
 ```powershell
-# Doble clic en:
-Iniciar_NOC.bat
+# Double-click or execute:
+.\Iniciar_NOC.bat
 ```
-Se abre API y Dashboard automáticamente.
+*Initializes both the FastAPI service and the Streamlit Dashboard simultaneously.*
 
-### Servidor Remoto
+### Remote Agent Initialization
 ```powershell
-# Doble clic en:
-AGENTE_PORTABLE.exe
+# Double-click or execute:
+.\AGENTE_PORTABLE.exe
 ```
-O ejecutar `config.bat` si necesitas configurar IP_CENTRAL.
-
-
-## Configuración Crítica
-
-**En `config.bat` del servidor (o editar agente.py línea 8):**
-```batch
-set IP_CENTRAL=192.168.4.143  # ← Cambiar con tu IP de laptop
-```
+*Initializes metric collection and transmission. Requires prior IP configuration in `config.json`.*
 
 ---
 
-## URLs Importantes
+## Critical Endpoints
 
-| URL | Descripción |
-|-----|-------------|
-| `http://localhost:8501` | Dashboard Streamlit |
-| `http://localhost:8000/estado` | API GET últimas métricas (JSON) |
-| `http://localhost:8000/docs` | API documentación automática |
+| Resource | URL | Description |
+|----------|-----|-------------|
+| **Dashboard** | `http://localhost:8501` | Primary visualization interface. |
+| **API State** | `http://localhost:8000/estado` | GET endpoint returning the current node array (JSON). |
+| **API Docs** | `http://localhost:8000/docs` | Swagger UI detailing REST endpoints. |
 
 ---
 
-## Estructura de Datos Retornada
+## Data Structures
 
-**GET /estado retorna:**
+**GET `/estado` Response Format:**
 ```json
 {
-  "SERVIDOR1 (192.168.1.100)": {
+  "SERVER01 (192.168.1.100)": {
     "cpu": 45.2,
     "ram": 62.1,
-    "temp": 0.0
+    "temp": 42.0,
+    "disk": 55.4
   },
-  "SERVIDOR2 (192.168.1.101)": {
+  "SERVER02 (192.168.1.101)": {
     "cpu": 28.5,
     "ram": 41.3,
-    "temp": 0.0
+    "temp": 38.5,
+    "disk": 80.1
   }
 }
 ```
 
 ---
 
-## Archivos Ejecutables
+## Configuration Parameter Override
 
-| Archivo | Uso |
-|---------|-----|
-| `Iniciar_NOC.bat` | Ejecutar central (API + Dashboard) |
-| `AGENTE_PORTABLE.exe` | Ejecutar en servidores remotos (Manual) |
+To manually override the Central Server routing on an agent node, edit the generated `config/config.json`:
 
-
-## Ciclo de Ejecución
-
-1. **Agente** (cada 5s): recopila CPU/RAM → POST /reportar
-2. **Servidor**: almacena en memoria
-3. **Dashboard** (cada 2s): GET /estado → visualiza
-
----
-
-## Troubleshooting Rápido
-
-| Error | Causa | Solución |
-|-------|-------|----------|
-| Dashboard vacío | Agente no conecta | Verificar IP en `config/config.json` |
-| "Port 8000 in use" | Proceso anterior no cerrado | Reiniciar laptop |
-| Agente no inicia | Archivo .exe corrupto | Regenerar con PyInstaller |
-| Conexión rechazada | Firewall bloquea puerto | `netsh advfirewall firewall add rule...` |
+```json
+{
+  "servidor_central": {
+    "ip": "192.168.4.143",
+    "puerto": 8000
+  }
+}
+```
 
 ---
 
-## Comandos Desarrollo (Si necesitas)
+## Common Diagnostic Resolutions
 
-**Instalación desde Cero (Copiar y Pegar):**
+| Symptom | Probable Cause | Corrective Action |
+|---------|----------------|-------------------|
+| Empty Dashboard | Agents unable to establish connection. | Validate `servidor_central` IP in agent `config.json`. |
+| "Port 8000 in use" | Ghost API process occupying binding. | Terminate `python.exe` processes or reboot Central Server. |
+| Connection Timeout | Ingress traffic dropped by OS firewall. | Execute firewall `allow` rule for TCP port 8000. |
+
+---
+
+## Developer Bootstrap Workflow
+
 ```powershell
-# 1. Crear y activar entorno virtual
+# 1. Initialize Python Environment
 python -m venv venv
 .\venv\Scripts\activate
 
-# 2. Instalar todo y crear ejecutable
+# 2. Resolve Dependencies
 pip install -r requirements.txt
-herramientas.bat
+
+# 3. Generate Artifacts
+.\herramientas.bat
 ```

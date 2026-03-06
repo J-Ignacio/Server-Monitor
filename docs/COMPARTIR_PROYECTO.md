@@ -1,215 +1,77 @@
-# 📘 Guía de Despliegue y Solución de Problemas
+# Deployment and Distribution Guide
 
-## 🚀 Opción Rápida: Solo Agentes (Para Monitorear)
-Esta guía explica cómo instalar el sistema en una nueva PC, cómo distribuir agentes y cómo solucionar los problemas de conexión más comunes.
+This document outlines the standard procedures for distributing the monitoring application across various environments, ensuring stable deployment configurations.
 
-Si solo quieres **monitorear otras PCs** (no desarrollar en ellas), no necesitas copiar todo el proyecto. Sigue este flujo "Universal":
----
+## Scenario A: Agent Deployment (Monitoring Remote Nodes)
+*Follow this procedure to deploy the tracking agent to target machines without transferring the entire repository.*
 
-### 1. Configurar en tu Servidor (Una sola vez)
-1. Abre `src/config.py`.
-2. Busca `CONFIGURACION_PREDETERMINADA`.
-3. Cambia `"ip": "127.0.0.1"` por la **IP Real de tu Servidor** (ej: `192.168.1.50`).
-## 🏆 Reglas de Oro (Lee esto primero)
+### 1. Configure the Central Target
+1. Access the Central Server and open `config/config.json`.
+2. Locate the `servidor_central` block.
+3. Update the `ip` field to reflect the fixed IP address of your Central Server (e.g., `"ip": "192.168.1.50"`).
 
-### 2. Generar el Ejecutable
-1. Ejecuta `herramientas.bat`.
-2. Selecciona la opción **[1] Compilar Agentes**.
-3. Espera a que termine el proceso.
+### 2. Compile the Agent Executable
+1. Execute `herramientas.bat` on the Central Server.
+2. Select option **[1] Compile Agents**.
+3. Await the completion of the PyInstaller build process. The output will be located in the `dist/` directory.
 
-1. **Si cambias la IP en el código:** Debes **BORRAR** el archivo `config/config.json` para que el sistema tome el cambio. Si no lo borras, seguirá usando la configuración vieja.
-2. **Si hay "Timeout":** Casi siempre es el Firewall de Windows. Ejecuta el comando de desbloqueo (ver abajo).
-3. **Para instalar rápido:** Usa siempre `instalar_agente.bat` en lugar de hacerlo manual.
+### 3. Distribute to Target Nodes
+1. Navigate to the `dist/` directory.
+2. Transfer the executable (`NOC_SERVICIO.exe`) and the installation script (`instalar_agente.bat`) to the target node.
+3. On the target node, execute `instalar_agente.bat` with **Administrator privileges**.
+4. The agent will initialize as a background service and commence metric transmission.
 
-### 3. Distribuir
-1. Ve a la carpeta `dist/`.
-2. Copia **todo el contenido** (el archivo `NOC_SERVICIO.exe` y `instalar_agente.bat`) a la PC remota.
-3. En la PC remota, ejecuta `instalar_agente.bat` como Administrador.
-4. **¡Listo!** El servicio se instalará y comenzará a reportar automáticamente.
+*Note: If updating an existing agent deployment, you must delete the legacy `config/config.json` on the target machine to force it to adopt the newly compiled IP routing.*
 
 ---
 
-## 📦 Opción Completa: Mover el Proyecto (Para Desarrollo)
-## 🚀 Escenario A: Instalar Servidor Completo (Nueva PC)
-*Usa esto si quieres mover todo el sistema (Dashboard + API) a otra computadora.*
+## Scenario B: Full System Migration (Development/NOC Setup)
+*Follow this procedure to migrate the entire codebase, including the API and Dashboard, to a new administrative machine.*
 
-Usa esta opción si quieres mover todo el código fuente a otra PC para seguir programando.
-1. **Copiar:** Copia toda la carpeta del proyecto (excepto `venv`, `build`, `dist`) a la nueva PC.
-2. **Instalar:** Ejecuta `setup.bat`.
-   - Esto instalará Python (si falta), creará el entorno virtual y descargará las librerías.
-3. **Iniciar:** Ejecuta `Iniciar_NOC.bat`.
+### 1. Codebase Transfer
+1. Compress the project directory.
+   - **Crucial:** Exclude the following directories to prevent environment corruption and reduce payload size:
+     - `venv/` (Python virtual environment)
+     - `build/` (Compilation artifacts)
+     - `dist/` (Compiled executables)
+     - `__pycache__/` (Python bytecode cache)
+     - `.git/` (Version control history)
+2. Transfer the compressed archive to the new Central Server.
 
-## ⚠️ Problemas Potenciales
+### 2. Environment Initialization
+1. Extract the archive.
+2. Execute `setup.bat`. This script will:
+   - Detect or install Python.
+   - Generate a fresh virtual environment (`venv`).
+   - Install required dependencies from `requirements.txt`.
+   - Compile the local executables.
 
-### 1. **El `venv/` (Ambiente Virtual)**
-- **Problema:** El `.bat` usa `.\venv\Scripts\python.exe`
-- **Solución:** La otra PC debe crear su propio `venv`
-
-### 2. **Carpetas a NO compartir**
-Estas carpetas son específicas de tu PC:
-```
-venv/              ← Ambiente virtual (7GB+)
-build/             ← Compilación temporal
-dist/              ← Ejecutables compilados
-__pycache__/       ← Caché de Python
-.git/              ← Repositorio git (opcional)
-```
-
-El `.gitignore` ya excluye estas carpetas automáticamente.
+### 3. Service Initialization
+1. Execute `Iniciar_NOC.bat` to launch the API and Dashboard services.
 
 ---
 
-## ✅ Paso a Paso para Compartir
-## 📡 Escenario B: Solo Agente (Monitorear PC Remota)
-*Usa esto para monitorear otras computadoras sin instalar todo el proyecto en ellas.*
+## Troubleshooting Connectivity
 
-### 1. Preparar tu PC
-### 1. Configurar IP (En tu PC Principal)
-1. Abre `src/config.py`.
-2. Edita `CONFIGURACION_PREDETERMINADA` > `servidor_central` > `"ip"`.
-3. Pon la **IP de tu PC Principal** (ej: `192.168.4.142`).
+### 1. Agent Reports Legacy IP
+**Symptom:** The agent continues attempting connections to an outdated Central Server IP.
+**Resolution:**
+1. Terminate the agent process.
+2. Locate the `config/` directory adjacent to the executable.
+3. Delete the `config.json` file.
+4. Relaunch the agent to regenerate the configuration based on the compiled defaults.
 
-**Comprimir sin las carpetas innecesarias:**
-### 2. Generar Ejecutable
-Usa `herramientas.bat` -> Opción [1].
+### 2. Connection Timeout / Refusal
+**Symptom:** Agent logs indicate a timeout; the Central Server is unreachable.
+**Resolution:**
+The Windows Firewall on the Central Server is likely restricting inbound traffic on the designated port.
+1. Open PowerShell as Administrator on the Central Server.
+2. Execute the firewall configuration command:
+   ```powershell
+   New-NetFirewallRule -DisplayName "NOC Monitor" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
+   ```
 
-### 2. En la Otra PC
-### 3. Distribuir
-1. Copia los archivos de `dist/` a la PC remota.
-2. **Importante:** Si ya había una versión anterior, borra el archivo `config.json` o la carpeta `config` en la PC remota.
-3. Ejecuta `instalar_agente.bat`.
-
-**Paso 1: Extraer archivo**
-```powershell
-Extract-Archive Monitor_Servidores.zip
-cd Monitor_Servidores
-```
-
-**Paso 2: Crear nuevo venv**
-```powershell
-python -m venv venv
-venv\Scripts\activate
-```
-
-**Paso 3: Instalar dependencias**
-```powershell
-pip install -r requirements.txt
-```
-
-**Paso 4: Ejecutar**
-```powershell
-# Opción A: Doble clic en Iniciar_NOC.bat
-Iniciar_NOC.bat
-```
-
----
-
-## 📊 Archivos a Compartir
-## 🔧 Solución de Problemas (Troubleshooting)
-
-| Archivo/Carpeta | ¿Compartir? | Razón |
-|-----------------|------------|-------|
-| `src/` | ✅ SÍ | Código fuente |
-| `docs/` | ✅ SÍ | Documentación |
-| `requirements.txt` | ✅ SÍ | Dependencias |
-| `Iniciar_NOC.bat` | ✅ SÍ | Script central |
-| `herramientas.bat` | ✅ SÍ | Para regenerar .exe |
-| `README.md` | ✅ SÍ | Guía principal |
-| `venv/` | ❌ NO | Ambiente virtual (muy pesado) |
-| `build/` | ❌ NO | Compilación temporal |
-| `dist/` | ❌ NO | Solo .exe antiguo |
-| `__pycache__/` | ❌ NO | Caché de Python |
-| `.git/` | ❌ NO | Histórico git (opcional) |
-### 1. El Agente sigue conectando a la IP vieja
-**Causa:** El agente tiene "memoria" (el archivo `config.json` guardado).
-**Solución:**
-1. Cierra el agente.
-2. Ve a la carpeta `config` (o junto al .exe).
-3. **Borra el archivo `config.json`**.
-4. Vuelve a abrir el agente.
-
----
-
-## 🔧 Tamaño Estimado
-
-| Elemento | Tamaño |
-|----------|--------|
-| Código + docs | ~500 KB |
-| `venv/` (con todo) | 500+ MB |
-| `dist/AGENTE_PORTABLE.exe` | ~50 MB |
-
-**Total sin venv:** ~60 MB  
-**Total con venv:** ~600+ MB
-
----
-
-## 🚀 Opción Alternativa: Script de Setup
-
-Crear `setup.bat` para que la otra PC lo ejecute automáticamente:
-
-```batch
-@echo off
-echo Creando ambiente virtual...
-python -m venv venv
-
-echo Activando ambiente...
-call venv\Scripts\activate
-
-echo Instalando dependencias...
-pip install -r requirements.txt
-
-echo Regenerando ejecutables...
-call herramientas.bat
-
-echo.
-echo ✅ Configuración completada!
-echo Ahora puedes ejecutar: Iniciar_NOC.bat
-pause
-### 2. Error "Timeout" o "Sin conexión"
-**Causa:** El Firewall de Windows en el Servidor está bloqueando la entrada.
-**Solución:**
-En la PC Servidor, abre **PowerShell como Administrador** y ejecuta:
-```powershell
-New-NetFirewallRule -DisplayName "NOC Monitor" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
-```
-
-Guarda como `setup.bat` y comparte junto con el proyecto.
-### 3. Error "Host de destino inaccesible"
-**Causa:** Las computadoras están en redes diferentes (ej. `.1.x` y `.4.x`) y no hay ruta entre ellas.
-**Solución:**
-- Opción A: Conectar ambas a la misma red WiFi/VPN.
-- Opción B: Instalar **Tailscale** en ambas y usar la IP de Tailscale.
-
----
-
-## 📋 Checklist antes de Compartir
-## 📂 Qué compartir y qué no
-
-- [ ] Comprimir sin `venv/`, `build/`, `dist/`, `__pycache__/`
-- [ ] Incluir `requirements.txt`
-- [ ] Incluir `AGENTE_FINAL.spec`
-- [ ] Incluir `setup.bat` (opcional pero recomendado)
-- [ ] Verificar que `.gitignore` está presente
-- [ ] Prueba en otra PC antes de entregar
-
----
-
-## 🆘 Si Algo Falla en la Otra PC
-
-**Error: `venv\Scripts\python.exe no existe`**
-- Ejecutar `python -m venv venv`
-- Ejecutar `pip install -r requirements.txt`
-
-**Error: `ModuleNotFoundError`**
-- Verificar que está activado el venv
-- Reinstalar: `pip install -r requirements.txt --force-reinstall`
-
-**Error: `AGENTE_FINAL.exe no existe`**
-- Instalar PyInstaller: `pip install pyinstaller`
-- Regenerar: `herramientas.bat`
-| Carpeta | Acción | Por qué |
-|---------|--------|---------|
-| `src/` | ✅ Copiar | Es el código fuente. |
-| `setup.bat` | ✅ Copiar | Instala todo automáticamente. |
-| `venv/` | ❌ NO Copiar | Se rompe al moverlo. `setup.bat` creará uno nuevo. |
-| `config/` | ⚠️ Cuidado | Contiene tu configuración local. Mejor borrar `config.json` al copiar. |
+### 3. Destination Host Unreachable
+**Symptom:** Network partition between the Agent and Central Server (e.g., disparate subnets).
+**Resolution:**
+Ensure proper routing exists between the nodes. Implement a VPN solution (e.g., Tailscale or WireGuard) to establish a flattened overlay network if physical routing is unavailable.

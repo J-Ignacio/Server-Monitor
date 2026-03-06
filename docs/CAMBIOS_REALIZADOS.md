@@ -1,114 +1,66 @@
-# 📝 Registro de Cambios (Changelog)
+# Changelog
 
-## 📝 Código Python - Comentarios Añadidos
+## Codebase Refactoring & Documentation
 
-### `src/agente.py`
-- Docstring resumido en cabecera
-- Comentarios en línea para variables clave
-- Docstrings en funciones
-
-### `src/servidor.py`
-- Docstring resumido en cabecera
-- Comentarios en modelo Metricas
-- Docstrings en endpoints
-
-### `src/dashboard.py`
-- Docstring resumido en cabecera
-- Comentarios claros en estructura
-- Docstring en función obtener_datos()
-
-### `src/config.py`
-- Definición de ruta para base de datos SQLite (`data/metricas.db`)
+### Python Module Standardization
+- `src/agente.py`: Implemented comprehensive Google-style docstrings, refined inline comments for clarity, and established a professional technical tone.
+- `src/config.py`: Centralized configuration logic with detailed docstrings, ensuring clear property definitions and robust error handling documentation.
+- `src/servidor.py`: Updated module headers and endpoint docstrings to reflect REST API standards.
+- `src/dashboard.py`: Structured visualization logic with clear modular documentation.
 
 ---
 
-## 💾 Persistencia y Visualización (Nuevo)
+## Persistence and Data Analysis
 
-### Base de Datos SQLite
-- Reemplazo del almacenamiento volátil (RAM) por persistente (`metricas.db`).
-- Historial de métricas conservado tras reinicios.
-- Nuevo endpoint `/historial/{id}` en la API para consultar datos pasados.
+### SQLite Integration
+- Transitioned from volatile, memory-based metric storage to persistent SQLite architecture (`data/metricas.db`).
+- Introduced historical data retention, surviving system reboots.
+- Deployed a new API endpoint, `/historial/{id}`, to facilitate time-series queries.
 
-### Nuevas Métricas
-- **Monitoreo de Disco:** Se ha incorporado la lectura del porcentaje de uso de la partición principal (C: o /).
-- **Migración Automática:** El servidor detecta si la base de datos es antigua y añade la columna `disk` automáticamente.
-
-### Estructura del Proyecto
-- **Paquete `src`:** Documentada la inclusión de `__init__.py` para modularidad y soporte de importaciones.
-
-### Gráficos Históricos
-- Dashboard ahora muestra la evolución de la CPU en el tiempo.
-- Uso de `pandas` para procesar series temporales.
+### Expanded Metric Collection
+- **Disk Utilization:** Integrated logic to capture the usage percentage of the primary partition (`C:` or `/`).
+- **Database Schema Migration:** Implemented automated schema upgrades, allowing the server to dynamically append the `disk` column to legacy databases.
+- **Historical Charting:** Enhanced the Dashboard to render dynamic time-series line charts for CPU utilization over time via the `pandas` library.
 
 ---
 
-## � Scripts Batch Creados
+## Automation and Tooling
 
-### `setup.bat` (Nuevo)
-- Detecta si Python está instalado
-- Crea venv automáticamente
-- Instala todas las dependencias
-- Regenera ejecutables (Portable y Servicio)
-- **Primera cosa que debe ejecutar el usuario**
-
----
-
-## �📚 Documentación Markdown
-
-### 1. **README.md** (Actualizado)
-   - Ahora menciona `setup.bat` para primera instalación
-   - Enfoque en ejecutables (.bat y .exe)
-   - Link a COMPARTIR_PROYECTO.md
-
-### 2. **docs/instalacion.md**
-   - Opción A: Ejecutables (recomendado)
-   - Opción B: Manual con comandos
-   - Tabla troubleshooting
-
-### 3. **docs/COMPONENTES.md**
-   - Sección de ejecutables (.bat y .exe)
-   - Cómo regenerar .exe
-   - Componentes de código explicados
-
-### 4. **docs/arquitectura.md**
-   - Diagrama ASCII flujo
-   - Protocolo HTTP detallado
-   - Limitaciones y seguridad
-
-### 5. **docs/REFERENCIA_RAPIDA.md**
-   - Ejecución con doble clic
-   - Configuración de IP_CENTRAL
-   - Troubleshooting rápido
-
-### 6. **docs/COMPARTIR_PROYECTO.md** (Creado)
-   - Problemas potenciales al compartir
-   - Qué carpetas NO incluir (venv, build, dist)
-   - Paso a paso para otra PC
-   - **Nueva sección:** Guía para distribuir solo el Agente (.exe)
-   - Menciona setup.bat
-
-## 🚀 Actualización: Control y Seguridad (Nuevo)
-
-### 🔄 Gestión Remota
-- **Botón de Reinicio:** Implementado en Dashboard con confirmación de seguridad (¿Estás seguro?).
-- **Cola de Comandos:** El servidor gestiona órdenes pendientes y las entrega al agente cuando este reporta.
- - **Ejecución Remota:** El agente ya incluye la lógica para recibir el comando `"reiniciar"` y ejecutar `shutdown` en el sistema operativo.
-
-### 🔒 Seguridad y Red
-- **Soporte SSL/TLS:** Configuración centralizada para certificados `.pem` y `.key` (HTTPS).
-- **Alertas por Email:** Integración SMTP para notificar caídas de servidores.
-- **Monitor de Latidos (Heartbeat):** Detección automática de agentes desconectados (>5 min sin reportar).
-
-### ⚠️ Pendiente / Por Implementar
-- **Configuración SMTP:** El archivo `config.json` debe actualizarse con credenciales reales para que funcionen los correos.
+### System Initialization Automation
+- **`setup.bat`:** Created a comprehensive bootstrap script that automates environment preparation:
+  - Validates Python installations.
+  - Provisions the virtual environment (`venv`).
+  - Resolves dependencies via `pip`.
+  - Compiles necessary executable artifacts (Portable and Service variants).
 
 ---
 
-## 🎯 Resultado Final
+## Enhanced Architecture Documentation
 
-✅ Sistema listo para ejecutarse con .bat y .exe  
-✅ Documentación enfocada en usuarios finales  
-✅ Comentarios resumidos en código  
-✅ Guía completa para instalación y uso  
+### `/docs` Overhaul
+- **`instalacion.md`:** Standardized deployment instructions for both automated and source-based environments.
+- **`COMPONENTES.md`:** Detailed system architecture, component responsibilities, and configuration structures.
+- **`arquitectura.md`:** Refined the data flow diagrams and protocol definitions for advanced technical review.
+- **`COMPARTIR_PROYECTO.md`:** Established clear protocols for system distribution and agent deployment scenarios.
+- **`REFERENCIA_RAPIDA.md`:** Consolidated a technical cheat sheet for rapid operational reference.
 
-**Última actualización:** Enero 2026
+---
+
+## Remote Management and Security
+
+### Remote Execution Capabilities
+- **Reboot Operations:** Implemented administrative controls within the Dashboard to queue remote reboot commands.
+- **Command Polling:** Enhanced the API to manage instruction queues, delivering commands to agents during standard metric payload exchanges.
+- **Agent Integration:** `agente.py` successfully parses reboot instructions and executes OS-level `shutdown` protocols.
+
+### Network and Reliability Enhancements
+- **SSL/TLS Infrastructure:** Added configuration scaffolding for certificate-based HTTPS communication.
+- **SMTP Alerts:** Built foundational integration for email-based node failure notifications.
+- **Heartbeat Monitoring:** Integrated logic to flag agents that fail to transmit telemetry within a 5-minute threshold.
+
+### Deferred Items
+- Validating and enabling the SMTP configuration within `config.json` for production environments.
+
+---
+
+**Last Update:** January 2026
