@@ -1,107 +1,100 @@
-# 🏗️ Arquitectura y Flujo de Datos
+# Architecture and Data Flow
 
-## Diagrama de Flujo
+## System Flow Diagram
 
-```
+```text
 ┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
-│ SERVIDOR REMOTO  │         │ SERVIDOR CENTRAL │         │  NAVEGADOR WEB   │
-│   (Agente)       │         │    (FastAPI)     │         │   (Dashboard)    │
+│   REMOTE NODE    │         │  CENTRAL SERVER  │         │    WEB CLIENT    │
+│     (Agent)      │         │    (FastAPI)     │         │   (Dashboard)    │
 └────────┬─────────┘         └────────┬─────────┘         └────────┬─────────┘
          │                            │                            │
          │ POST /reportar             │                            │
-         │ {cpu, ram}                 │                            │
+         │ {cpu, ram, disk, temp}     │                            │
          ├───────────────────────────>│                            │
-         │                    Guarda en DB (SQLite)                │
+         │                            │                            │
+         │                  Persists to DB (SQLite)                │
          │                            │                            │
          │                            │<───── GET /estado ─────────│
          │                            │                            │
-         │                            ├──────JSON────────────────>│
-         │ (cada 5 seg)               │        (actualiza c/2s)   │
-         │                            │                            │
+         │                            ├────── JSON Response ──────>│
+         │                            │       (Updates 2s)         │
+         │ (5s Interval)              │                            │
          ├───────────────────────────>│                            │
 ```
 
-## Componentes
+## System Components
 
-### 1. Agente Remoto (`agente.py`)
-- Corre en cada servidor remoto
-- Recopila: CPU, RAM cada 5 segundos
-- Envía JSON al endpoint POST `/reportar`
-- Reintentos automáticos en desconexión
-- **Sensores**: Intenta capturar temperatura (WMI/psutil) si hay permisos y hardware compatible
+### 1. Remote Agent (`agente.py`)
+- Deployed on target infrastructure nodes.
+- **Metric Collection:** Captures CPU, RAM, Disk utilization, and Temperature at defined intervals.
+- **Transmission:** Dispatches JSON payloads to the `/reportar` POST endpoint.
+- **Resilience:** Implements exponential backoff and retry mechanisms for network partitions.
+- **Sensors:** Interrogates WMI/psutil for thermal data, contingent on hardware support and administrative privileges.
 
-### 2. Servidor Central (`servidor.py`)
-- API FastAPI en laptop central
-- Dos endpoints:
-  - `POST /reportar`: recibe métricas (válida con Pydantic)
-  - `GET /estado`: retorna dict con última medición
-  - `GET /historial/{id}`: retorna lista de métricas pasadas
-- Almacenamiento: **Base de datos SQLite** (`data/metricas.db`)
-- Puerto: 8000
+### 2. Central Server (`servidor.py`)
+- Hosts a FastAPI REST interface on the centralized NOC hardware.
+- **Endpoints:**
+  - `POST /reportar`: Ingests and validates metric payloads via Pydantic schemas.
+  - `GET /estado`: Returns the most recently recorded metrics for active nodes.
+  - `GET /historial/{id}`: Returns a time-series array of historical metrics.
+- **Storage Layer:** Utilizes SQLite (`data/metricas.db`) for lightweight, persistent data retention.
+- **Network:** Binds to port `8000` by default.
 
-### 3. Dashboard (`dashboard.py`)
-- Interfaz Streamlit
-- Actualiza cada 2 segundos
-- Layout dinámico (columnas por servidor)
-- Barras de progreso visuales
+### 3. Monitoring Dashboard (`dashboard.py`)
+- Streamlit application serving as the primary visualization layer.
+- Implements asynchronous polling to refresh node states dynamically.
+- Renders responsive UI components, historical charts, and administrative controls.
 
-## Protocolo de Comunicación
+## Communication Protocol
 
-### Request (Agente → Servidor)
+### Inbound Request (Agent → Server)
 ```http
 POST /reportar HTTP/1.1
 Host: 192.168.4.143:8000
 Content-Type: application/json
 
 {
-  "id_servidor": "SERVIDOR1 (192.168.1.100)",
+  "id_servidor": "SERVER01 (192.168.1.100)",
   "cpu": 45.2,
-  "ram": 62.1
+  "ram": 62.1,
+  "temp": 42.0,
+  "disk": 55.4
 }
 ```
 
-### Response (Servidor → Agente)
+### Server Response (Server → Agent)
 ```json
 {
   "status": "ok"
 }
 ```
 
-### Request (Dashboard → Servidor)
+### Data Query (Dashboard → Server)
 ```http
 GET /estado HTTP/1.1
 Host: localhost:8000
 ```
 
-### Response (Servidor → Dashboard)
+### Query Response (Server → Dashboard)
 ```json
 {
-  "SERVIDOR1 (192.168.1.100)": {
+  "SERVER01 (192.168.1.100)": {
     "cpu": 45.2,
-    "ram": 62.1
+    "ram": 62.1,
+    "temp": 42.0,
+    "disk": 55.4,
+    "timestamp": "2023-10-27T10:00:00Z"
   }
 }
 ```
 
-## Seguridad
+## Security Considerations
 
-- ⚠️ Sin autenticación (asume red corporativa segura)
-- ⚠️ HTTP solo (no HTTPS, solo LAN)
-- Para producción agregar:
-  - HTTPS/SSL
-  - Token authentication
-  - Validación de origen
+- **Authentication:** Currently operates without native authentication; relies on network perimeter security (VLAN/VPN).
+- **Transport:** Defaults to plain HTTP. Production deployments over un-trusted networks require enabling the SSL/TLS configuration parameter.
+- **Future Enhancements:** Token-based authentication and strict origin validation should be implemented prior to wide-scale deployment.
 
-## Limitaciones
+## System Limitations
 
-- **Temperatura**: Depende del hardware y permisos (WMI/OpenHardwareMonitor). Puede requerir ejecutar como Administrador.
-- **Escala**: ~100 servidores máximo
-- **Base de Datos**: SQLite (archivo local), no apto para miles de escrituras concurrentes por segundo.
-
-## Despliegue (RDP)
-
-1. Conectar por RDP al servidor remoto
-2. Copiar `agente.py` con Ctrl+C/V
-3. Instalar: `pip install requests psutil wmi`
-4. Editar IP_CENTRAL con IP de laptop central
-5. Ejecutar: `python agente.py`
+- **Thermal Metrics:** Dependency on OS-level APIs (WMI/psutil) or external services (OpenHardwareMonitor) requires specific hardware configurations and elevated privileges.
+- **Scalability:** The current SQLite implementation is optimized for environments scaling up to approximately 100 concurrent nodes. Environments exceeding this threshold may require migration to a robust RDBMS (e.g., PostgreSQL).
