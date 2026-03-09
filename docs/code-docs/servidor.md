@@ -1,11 +1,11 @@
-# Documentación Técnica: Servidor Central API `(servidor.py)`
+# Technical Documentation: Central API Server `(servidor.py)`
 
-El servidor central funciona como el punto de encuentro de todo el ecosistema. Su responsabilidad es doble: recibir datos de los agentes mediante un endpoint seguro y servir esos mismos datos al Dashboard para su visualización.
+The central server functions as the meeting point for the entire ecosystem. Its responsibility is twofold: to receive data from the agents through a secure endpoint and to serve that same data to the Dashboard for visualization.
 
-## 🛠️ Análisis Detallado por Módulos
+## 🛠️ Detailed Analysis by Modules
 
-### 1. Definición de Modelos y Esquema de Datos
-Para garantizar que los datos recibidos sean correctos, utilizamos Pydantic, que valida automáticamente el tipo de dato de cada métrica.
+### 1. Definition of Models and Data Schema
+To ensure the data received is correct, we use Pydantic, which automatically validates the data type of each metric.
 
 ```python
 import sqlite3
@@ -15,26 +15,26 @@ from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB
 
 app = FastAPI()
 
-# Modelo de validación: Asegura integridad de datos
+# Validation model: Ensures data integrity
 class Metricas(BaseModel):
-    id_servidor: str   # Nombre e IP del agente
-    cpu: float         # Valor numérico porcentual
-    ram: float         # Valor numérico porcentual
-    temp: float        # Temperatura en Celsius
-    disk: float        # % de uso de Disco (Partición Principal)
+    id_servidor: str   # Agent name and IP
+    cpu: float         # Percentage numeric value
+    ram: float         # Percentage numeric value
+    temp: float        # Temperature in Celsius
+    disk: float        # % Disk usage (Primary Partition)
 ```
 
-- Validación Automática: Si un agente envía accidentalmente un texto en lugar de un número en `cpu`, FastAPI rechazará la petición con un error `422 Unprocessable Entity` antes de que llegue a la base de datos.
+- **Automatic Validation:** If an agent accidentally sends text instead of a number in `cpu`, FastAPI will reject the request with a `422 Unprocessable Entity` error before it reaches the database.
 
-- Desacoplamiento: El uso de `DB_FILE` desde la configuración centralizada permite mover la base de datos a otros discos o rutas sin tocar este código.
+- **Decoupling:** Using `DB_FILE` from the centralized configuration allows moving the database to other disks or paths without touching this code.
 
-### 2. Persistencia y Gestión de Base de Datos
+### 2. Persistence and Database Management
 
-SQLite es ideal para este proyecto por su ligereza y porque no requiere un servidor de base de datos independiente.
+SQLite is ideal for this project because of its lightweight nature and because it does not require an independent database server.
 
 ```python
 def init_db():
-    """Inicializa la tabla de métricas si no existe en el archivo .db"""
+    """Initializes the metrics table if it doesn't exist in the .db file"""
     conn = sqlite3.connect(str(DB_FILE))
     cursor = conn.cursor()
     cursor.execute('''
@@ -48,11 +48,11 @@ def init_db():
         )
     ''')
     
-    # Migración: Verificar si existe la columna 'temp' y agregarla si falta
+    # Migration: Check if 'temp' column exists and add it if missing
     cursor.execute("PRAGMA table_info(metricas)")
     columnas = [info[1] for info in cursor.fetchall()]
     if "temp" not in columnas:
-        print("🔧 Migrando base de datos: Añadiendo columna 'temp'...")
+        print("🔧 Migrating database: Adding 'temp' column...")
         cursor.execute("ALTER TABLE metricas ADD COLUMN temp REAL")
 
     conn.commit()
@@ -61,26 +61,26 @@ def init_db():
 @app.on_event("startup")
 async def startup_event():
     init_db()
-    print(f"🚀 Sistema de Monitoreo - Servidor Central")
+    print(f"🚀 Monitoring System - Central Server")
 ```
 
-- `CURRENT_TIMESTAMP`: La base de datos asigna automáticamente la fecha y hora a cada registro, lo que garantiza precisión cronológica para los gráficos del dashboard.
+- `CURRENT_TIMESTAMP`: The database automatically assigns the date and time to each record, ensuring chronological accuracy for dashboard charts.
 
-- `@app.on_event("startup")`: Esta función se ejecuta solo una vez al encender el servidor, asegurando que la tabla esté lista antes de recibir la primera métrica.
+- `@app.on_event("startup")`: This function runs only once when the server starts, ensuring the table is ready before receiving the first metric.
 
-### 3. Endpoints de Consulta `(GET)`
+### 3. Query Endpoints `(GET)`
 
-Estas rutas permiten al Dashboard obtener la información actual e histórica de los equipos monitoreados.
+These routes allow the Dashboard to obtain current and historical information on monitored equipment.
 
 ```python
 @app.get("/estado")
 async def obtener_estado():
-    """Retorna la última métrica conocida de cada servidor registrado"""
+    """Returns the last known metric of each registered server"""
     conn = sqlite3.connect(str(DB_FILE))
-    conn.row_factory = sqlite3.Row # Permite acceder por nombre de columna
+    conn.row_factory = sqlite3.Row # Allows accessing by column name
     cursor = conn.cursor()
     
-    # Subconsulta para obtener solo el último ID por cada servidor
+    # Subquery to get only the last ID for each server
     cursor.execute('''
         SELECT id_servidor, cpu, ram, temp, timestamp 
         FROM metricas 
@@ -92,7 +92,7 @@ async def obtener_estado():
 
 @app.get("/historial/{id_servidor}")
 async def obtener_historial(id_servidor: str):
-    """Retorna los últimos 50 registros de un servidor específico"""
+    """Returns the last 50 records of a specific server"""
     conn = sqlite3.connect(str(DB_FILE))
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -103,21 +103,21 @@ async def obtener_historial(id_servidor: str):
     ''', (id_servidor,))
     rows = cursor.fetchall()
     conn.close()
-    return [dict(row) for row in rows][::-1] # Inversión para orden cronológico
+    return [dict(row) for row in rows][::-1] # Inversion for chronological order
 ```
 
-- Optimización de Consulta: La consulta en `/estado` utiliza un `GROUP BY` con `MAX(id)` para evitar enviar datos viejos al panel principal.
+- **Query Optimization:** The query in `/estado` uses a `GROUP BY` with `MAX(id)` to avoid sending old data to the main panel.
 
-- Slicing `[::-1]`: Se usa para invertir la lista del historial, de modo que el gráfico en el Dashboard se dibuje de izquierda (más antiguo) a derecha (más reciente).
+- **Slicing `[::-1]`:** Used to reverse the history list, so the chart in the Dashboard is drawn from left (oldest) to right (most recent).
 
-### 4. Endpoint de Recepción `(POST)`
+### 4. Reception Endpoint `(POST)`
 
-Es la puerta de entrada para los agentes remotos.
+This is the gateway for remote agents.
 
 ```python
 @app.post("/reportar")
 async def reportar_metricas(metricas: Metricas):
-    """Guarda en la base de datos las métricas enviadas por el agente"""
+    """Saves metrics sent by the agent to the database"""
     try:
         conn = sqlite3.connect(str(DB_FILE))
         cursor = conn.cursor()
@@ -128,40 +128,40 @@ async def reportar_metricas(metricas: Metricas):
         return {"mensaje": "Métricas guardadas"}
     except Exception as e:
         if DEBUG: print(f"Error BD: {e}")
-        raise HTTPException(status_code=500, detail="Error al guardar métricas")
+        raise HTTPException(status_code=500, detail="Error saving metrics")
 ```
 
-- Inyección SQL: El uso de `?` en la sentencia `INSERT` previene ataques de inyección SQL, una buena práctica de seguridad incluso en sistemas internos.
+- **SQL Injection:** Using `?` in the `INSERT` statement prevents SQL injection attacks, a good security practice even in internal systems.
 
-- Manejo de Excepciones: Si la base de datos está bloqueada o hay un error de escritura, se lanza una `HTTPException 500`, informando al agente que el dato no se guardó.
+- **Exception Handling:** If the database is locked or there is a write error, an `HTTPException 500` is thrown, informing the agent that the data was not saved.
 
-### 5. Ejecución del Servidor
+### 5. Server Execution
 ```python
 if __name__ == "__main__":
     import uvicorn
-    # Inicia el servidor usando el host y puerto definidos en config.py
+    # Starts the server using the host and port defined in config.py
     uvicorn.run(app, host=SERVIDOR_CENTRAL_HOST, port=SERVIDOR_CENTRAL_PUERTO)
 ```
 
-- Uvicorn: Es el servidor ASGI de alto rendimiento que permite que FastAPI maneje múltiples peticiones de agentes de forma asíncrona.
+- **Uvicorn:** It is the high-performance ASGI server that allows FastAPI to handle multiple requests from agents asynchronously.
 
-### 6. Sistema de Alertas y Monitoreo de Latidos (Heartbeat)
+### 6. Alert System and Heartbeat Monitoring
 
-El servidor ejecuta una tarea en segundo plano que verifica si los agentes siguen "vivos".
+The server runs a background task that checks if agents are still "alive".
 
 ```python
 async def monitor_latidos():
-    """Tarea en segundo plano: verifica si los servidores han dejado de reportar"""
+    """Background task: checks if servers have stopped reporting"""
     while True:
-        await asyncio.sleep(60) # Verificar cada 60 segundos
-        # ... lógica de consulta a BD ...
+        await asyncio.sleep(60) # Check every 60 seconds
+        # ... database query logic ...
         
-        if delta > 300: # 5 minutos sin señal
+        if delta > 300: # 5 minutes without signal
             if not alertas_activas.get(srv, False):
-                print(f"⚠️ ALERTA: {srv} no responde hace {int(delta)}s")
-                await loop.run_in_executor(None, enviar_correo, f"🚨 ALERTA: {srv} Caído", ...)
+                print(f"⚠️ ALERT: {srv} has not responded for {int(delta)}s")
+                await loop.run_in_executor(None, enviar_correo, f"🚨 ALERT: {srv} Down", ...)
                 alertas_activas[srv] = True
 ```
 
-- **Monitor de Latidos (Heartbeat):** Una tarea asíncrona (`monitor_latidos`) se ejecuta en el bucle principal. Compara el timestamp del último reporte con la hora actual. Si la diferencia es > 300 segundos (5 min), dispara una alerta por email.
-- **Cola de Comandos:** El endpoint `/admin/reiniciar` guarda la orden en un diccionario `comandos_pendientes`. Cuando el agente hace su siguiente POST a `/reportar`, el servidor revisa si hay comandos para él y se los entrega en la respuesta JSON.
+- **Heartbeat Monitor:** An asynchronous task (`monitor_latidos`) runs in the main loop. It compares the timestamp of the last report with the current time. If the difference is > 300 seconds (5 min), it triggers an email alert.
+- **Command Queue:** The `/admin/reiniciar` endpoint saves the command in a `comandos_pendientes` dictionary. When the agent makes its next POST to `/reportar`, the server checks if there are commands for it and delivers them in the JSON response.
