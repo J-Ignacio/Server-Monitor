@@ -1,77 +1,77 @@
-# Deployment and Distribution Guide
+# Guía de Despliegue y Distribución
 
-This document outlines the standard procedures for distributing the monitoring application across various environments, ensuring stable deployment configurations.
+Este documento describe los procedimientos estándar para distribuir la aplicación de monitoreo a través de varios entornos, garantizando configuraciones de implementación estables.
 
-## Scenario A: Agent Deployment (Monitoring Remote Nodes)
-*Follow this procedure to deploy the tracking agent to target machines without transferring the entire repository.*
+## Escenario A: Despliegue de Agentes (Monitoreo de Nodos Remotos)
+*Siga este procedimiento para desplegar el agente de seguimiento a las máquinas objetivo sin transferir todo el repositorio.*
 
-### 1. Configure the Central Target
-1. Access the Central Server and open `config/config.json`.
-2. Locate the `servidor_central` block.
-3. Update the `ip` field to reflect the fixed IP address of your Central Server (e.g., `"ip": "192.168.1.50"`).
+### 1. Configure el Objetivo Central
+1. Acceda al Servidor Central y abra `config/config.json`.
+2. Localice el bloque `servidor_central`.
+3. Actualice el campo `ip` para reflejar la dirección IP fija de su Servidor Central (ej. `"ip": "192.168.1.50"`).
 
-### 2. Compile the Agent Executable
-1. Execute `herramientas.bat` on the Central Server.
-2. Select option **[1] Compile Agents**.
-3. Await the completion of the PyInstaller build process. The output will be located in the `dist/` directory.
+### 2. Compile el Ejecutable del Agente
+1. Ejecute `herramientas.bat` en el Servidor Central.
+2. Seleccione la opción **[1] Compilar Agentes**.
+3. Espere a que se complete el proceso de construcción de PyInstaller. La salida se ubicará en el directorio `dist/`.
 
-### 3. Distribute to Target Nodes
-1. Navigate to the `dist/` directory.
-2. Transfer the executable (`NOC_SERVICIO.exe`) and the installation script (`instalar_agente.bat`) to the target node.
-3. On the target node, execute `instalar_agente.bat` with **Administrator privileges**.
-4. The agent will initialize as a background service and commence metric transmission.
+### 3. Distribuya a los Nodos Objetivo
+1. Navegue al directorio `dist/`.
+2. Transfiera el ejecutable (`NOC_SERVICIO.exe`) y el script de instalación (`instalar_agente.bat`) al nodo objetivo.
+3. En el nodo objetivo, ejecute `instalar_agente.bat` con **privilegios de Administrador**.
+4. El agente se inicializará como un servicio en segundo plano y comenzará la transmisión de métricas.
 
-*Note: If updating an existing agent deployment, you must delete the legacy `config/config.json` on the target machine to force it to adopt the newly compiled IP routing.*
-
----
-
-## Scenario B: Full System Migration (Development/NOC Setup)
-*Follow this procedure to migrate the entire codebase, including the API and Dashboard, to a new administrative machine.*
-
-### 1. Codebase Transfer
-1. Compress the project directory.
-   - **Crucial:** Exclude the following directories to prevent environment corruption and reduce payload size:
-     - `venv/` (Python virtual environment)
-     - `build/` (Compilation artifacts)
-     - `dist/` (Compiled executables)
-     - `__pycache__/` (Python bytecode cache)
-     - `.git/` (Version control history)
-2. Transfer the compressed archive to the new Central Server.
-
-### 2. Environment Initialization
-1. Extract the archive.
-2. Execute `setup.bat`. This script will:
-   - Detect or install Python.
-   - Generate a fresh virtual environment (`venv`).
-   - Install required dependencies from `requirements.txt`.
-   - Compile the local executables.
-
-### 3. Service Initialization
-1. Execute `Iniciar_NOC.bat` to launch the API and Dashboard services.
+*Nota: Si está actualizando una implementación de agente existente, debe eliminar el antiguo `config/config.json` en la máquina objetivo para forzarla a adoptar la nueva ruta de IP compilada.*
 
 ---
 
-## Troubleshooting Connectivity
+## Escenario B: Migración del Sistema Completo (Desarrollo/Configuración NOC)
+*Siga este procedimiento para migrar todo el código fuente, incluyendo la API y el Dashboard, a una nueva máquina administrativa.*
 
-### 1. Agent Reports Legacy IP
-**Symptom:** The agent continues attempting connections to an outdated Central Server IP.
-**Resolution:**
-1. Terminate the agent process.
-2. Locate the `config/` directory adjacent to the executable.
-3. Delete the `config.json` file.
-4. Relaunch the agent to regenerate the configuration based on the compiled defaults.
+### 1. Transferencia de Código
+1. Comprima el directorio del proyecto.
+   - **Crucial:** Excluya los siguientes directorios para evitar corrupción del entorno y reducir el tamaño de la carga útil:
+     - `venv/` (Entorno virtual de Python)
+     - `build/` (Artefactos de compilación)
+     - `dist/` (Ejecutables compilados)
+     - `__pycache__/` (Caché de bytecode de Python)
+     - `.git/` (Historial de control de versiones)
+2. Transfiera el archivo comprimido al nuevo Servidor Central.
 
-### 2. Connection Timeout / Refusal
-**Symptom:** Agent logs indicate a timeout; the Central Server is unreachable.
-**Resolution:**
-The Windows Firewall on the Central Server is likely restricting inbound traffic on the designated port.
-1. Open PowerShell as Administrator on the Central Server.
-2. Execute the firewall configuration command:
+### 2. Inicialización del Entorno
+1. Extraiga el archivo.
+2. Ejecute `setup.bat`. Este script:
+   - Detectará o instalará Python.
+   - Generará un nuevo entorno virtual (`venv`).
+   - Instalará las dependencias requeridas desde `requirements.txt`.
+   - Compilará los ejecutables locales.
+
+### 3. Inicialización del Servicio
+1. Ejecute `Iniciar_NOC.bat` para lanzar los servicios de API y Dashboard.
+
+---
+
+## Solución de Problemas de Conectividad
+
+### 1. El Agente Reporta IP Heredada
+**Síntoma:** El agente continúa intentando conectarse a una IP del Servidor Central obsoleta.
+**Resolución:**
+1. Termine el proceso del agente.
+2. Localice el directorio `config/` adyacente al ejecutable.
+3. Elimine el archivo `config.json`.
+4. Reinicie el agente para regenerar la configuración basándose en los valores predeterminados compilados.
+
+### 2. Tiempo de Espera Agotado / Conexión Rechazada
+**Síntoma:** Los registros del agente indican un tiempo de espera agotado; el Servidor Central es inalcanzable.
+**Resolución:**
+Es probable que el Firewall de Windows en el Servidor Central esté restringiendo el tráfico entrante en el puerto designado.
+1. Abra PowerShell como Administrador en el Servidor Central.
+2. Ejecute el comando de configuración del firewall:
    ```powershell
-   New-NetFirewallRule -DisplayName "NOC Monitor" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
+   New-NetFirewallRule -DisplayName "Monitor NOC" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
    ```
 
-### 3. Destination Host Unreachable
-**Symptom:** Network partition between the Agent and Central Server (e.g., disparate subnets).
-**Resolution:**
-Ensure proper routing exists between the nodes. Implement a VPN solution (e.g., Tailscale or WireGuard) to establish a flattened overlay network if physical routing is unavailable.
+### 3. Host de Destino Inalcanzable
+**Síntoma:** Partición de red entre el Agente y el Servidor Central (ej. subredes dispares).
+**Resolución:**
+Asegúrese de que exista un enrutamiento adecuado entre los nodos. Implemente una solución VPN (ej. Tailscale o WireGuard) para establecer una red superpuesta plana si el enrutamiento físico no está disponible.
