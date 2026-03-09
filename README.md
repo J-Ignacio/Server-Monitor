@@ -1,96 +1,96 @@
-# NOC Monitoring System
+# Sistema de Monitoreo NOC
 
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-00a393.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.25%2B-FF4B4B.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-A centralized, real-time telemetry and monitoring system designed for Network Operations Centers (NOC). This architecture enables continuous tracking of CPU, RAM, Disk utilization, and hardware temperatures across multiple distributed servers within a local area network (LAN) or virtual private network (VPN).
+Un sistema de monitoreo y telemetría centralizado en tiempo real diseñado para Centros de Operaciones de Red (NOC). Esta arquitectura permite el seguimiento continuo del uso de CPU, RAM, Disco y las temperaturas del hardware a través de múltiples servidores distribuidos dentro de una red de área local (LAN) o una red privada virtual (VPN).
 
-## 🚀 System Architecture Overview
+## 🚀 Resumen de Arquitectura del Sistema
 
-The system operates on a client-server model consisting of three primary components:
+El sistema opera bajo un modelo cliente-servidor que consta de tres componentes principales:
 
-1. **Remote Agent (`agente.py` / `AGENTE_FINAL.exe`):** A lightweight daemon deployed on target servers. It autonomously polls hardware sensors and transmits JSON payloads to the central server.
-2. **Central API Server (`servidor.py`):** A high-performance REST API built with FastAPI. It ingests agent telemetry, validates payloads, and persists time-series data into a SQLite database.
-3. **Monitoring Dashboard (`dashboard.py`):** A dynamic, asynchronous Streamlit interface that queries the Central API to render real-time visualizations and historical charts.
+1. **Agente Remoto (`agente.py` / `AGENTE_FINAL.exe`):** Un demonio ligero implementado en los servidores objetivo. Consulta de forma autónoma los sensores de hardware y transmite cargas útiles JSON al servidor central.
+2. **Servidor API Central (`servidor.py`):** Una API REST de alto rendimiento construida con FastAPI. Ingiere la telemetría de los agentes, valida las cargas útiles y persiste los datos de series temporales en una base de datos SQLite.
+3. **Dashboard de Monitoreo (`dashboard.py`):** Una interfaz de Streamlit dinámica y asíncrona que consulta la API Central para renderizar visualizaciones en tiempo real y gráficos históricos.
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Inicio Rápido
 
-### Initial Environment Setup (Central Server)
+### Configuración Inicial del Entorno (Servidor Central)
 
-To initialize the development environment and compile the necessary executables, execute the provided bootstrap script:
+Para inicializar el entorno de desarrollo y compilar los ejecutables necesarios, ejecute el script de inicio proporcionado:
 
 ```bat
-:: Double-click the following script to create the virtual environment,
-:: install dependencies, and compile the PyInstaller artifacts.
+:: Haga doble clic en el siguiente script para crear el entorno virtual,
+:: instalar dependencias y compilar los artefactos de PyInstaller.
 .\setup.bat
 ```
 
-### Launching the NOC Application
+### Lanzamiento de la Aplicación NOC
 
-**Automated Launch (Recommended):**
+**Lanzamiento Automatizado (Recomendado):**
 ```bat
-:: Double-click to concurrently start the FastAPI server and the Streamlit Dashboard.
+:: Haga doble clic para iniciar de forma concurrente el servidor FastAPI y el Dashboard de Streamlit.
 .\Iniciar_NOC.bat
 ```
 
-**Manual Execution (Development):**
+**Ejecución Manual (Desarrollo):**
 ```powershell
-# Ensure the virtual environment is active
+# Asegúrese de que el entorno virtual esté activo
 .\venv\Scripts\activate
 
-# Terminal 1: Initialize the FastAPI service
+# Terminal 1: Inicialice el servicio FastAPI
 python -m uvicorn src.servidor:app --host 0.0.0.0 --port 8000
 
-# Terminal 2: Initialize the Streamlit Dashboard
+# Terminal 2: Inicialice el Dashboard de Streamlit
 streamlit run src/dashboard.py
 ```
 
-### Deploying the Remote Agent
+### Implementación del Agente Remoto
 
-1. Generate the standalone executables utilizing `herramientas.bat` (Option 1).
-2. Navigate to the `dist/` directory and transfer `AGENTE_PORTABLE.exe` and `instalar_agente.bat` to the target remote server.
-3. Execute `instalar_agente.bat` with **Administrator privileges** on the remote server.
-4. Update `config/config.json` on the remote server to specify the IP address of the Central Server.
-5. Relaunch the agent.
+1. Genere los ejecutables independientes utilizando `herramientas.bat` (Opción 1).
+2. Navegue al directorio `dist/` y transfiera `AGENTE_PORTABLE.exe` e `instalar_agente.bat` al servidor remoto objetivo.
+3. Ejecute `instalar_agente.bat` con **privilegios de Administrador** en el servidor remoto.
+4. Actualice `config/config.json` en el servidor remoto para especificar la dirección IP del Servidor Central.
+5. Reinicie el agente.
 
 ---
 
-## 📁 Repository Structure
+## 📁 Estructura del Repositorio
 
-| Resource | Description |
+| Recurso | Descripción |
 |----------|-------------|
-| **`setup.bat`** | Environment initialization and dependency resolution script. |
-| **`limpiar.bat`** | Environment teardown script (removes `venv` and temporary build artifacts). |
-| **`Iniciar_NOC.bat`** | Unified launch script for the API and Dashboard services. |
-| `src/agente.py` | Source code for the remote telemetry agent. |
-| `src/servidor.py` | Source code for the FastAPI central server. |
-| `src/dashboard.py` | Source code for the Streamlit visualization interface. |
-| `config/config.json` | Centralized configuration file (generated automatically). |
-| `test_configuracion.py` | Diagnostic script for validating environment configuration. |
-| `logs/` | Directory containing rotating application logs. |
+| **`setup.bat`** | Script de inicialización del entorno y resolución de dependencias. |
+| **`limpiar.bat`** | Script de desmontaje del entorno (elimina `venv` y artefactos de compilación temporales). |
+| **`Iniciar_NOC.bat`** | Script de lanzamiento unificado para los servicios de API y Dashboard. |
+| `src/agente.py` | Código fuente para el agente de telemetría remoto. |
+| `src/servidor.py` | Código fuente para el servidor central FastAPI. |
+| `src/dashboard.py` | Código fuente para la interfaz de visualización de Streamlit. |
+| `config/config.json` | Archivo de configuración centralizado (generado automáticamente). |
+| `test_configuracion.py` | Script de diagnóstico para validar la configuración del entorno. |
+| `logs/` | Directorio que contiene registros de la aplicación en rotación. |
 
 ---
 
-## 📚 Technical Documentation
+## 📚 Documentación Técnica
 
-Comprehensive documentation detailing deployment strategies, system architecture, and configuration parameters is available in the `/docs` directory:
+La documentación completa que detalla las estrategias de implementación, la arquitectura del sistema y los parámetros de configuración está disponible en el directorio `/docs`:
 
-- [Deployment Guide](./docs/instalacion.md)
-- [System Architecture & Data Flow](./docs/arquitectura.md)
-- [Component Specifications](./docs/COMPONENTES.md)
-- [Distribution Protocols](./docs/COMPARTIR_PROYECTO.md)
-- [Quick Reference Cheat Sheet](./docs/REFERENCIA_RAPIDA.md)
-- [Changelog](./docs/CAMBIOS_REALIZADOS.md)
+- [Guía de Instalación](./docs/instalacion.md)
+- [Arquitectura del Sistema y Flujo de Datos](./docs/arquitectura.md)
+- [Especificaciones de Componentes](./docs/COMPONENTES.md)
+- [Protocolos de Distribución](./docs/COMPARTIR_PROYECTO.md)
+- [Hoja de Referencia Rápida](./docs/REFERENCIA_RAPIDA.md)
+- [Registro de Cambios](./docs/CAMBIOS_REALIZADOS.md)
 
 ---
 
-## ⚙️ System Requirements
+## ⚙️ Requisitos del Sistema
 
-- **Runtime:** Python 3.8 or higher.
-- **Network:** Port 8000 TCP must be accessible on the Central Server.
-- **Connectivity:** Reliable network routing between the Remote Agents and the Central Server.
-- **Hardware Metrics (Windows):** For accurate thermal polling on Windows environments, [OpenHardwareMonitor](https://openhardwaremonitor.org/) must be executed with Administrator privileges.
+- **Tiempo de ejecución:** Python 3.8 o superior.
+- **Red:** El puerto 8000 TCP debe ser accesible en el Servidor Central.
+- **Conectividad:** Enrutamiento de red confiable entre los Agentes Remotos y el Servidor Central.
+- **Métricas de Hardware (Windows):** Para un sondeo térmico preciso en entornos Windows, [OpenHardwareMonitor](https://openhardwaremonitor.org/) debe ejecutarse con privilegios de Administrador.

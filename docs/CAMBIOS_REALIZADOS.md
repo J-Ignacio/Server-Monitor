@@ -1,66 +1,66 @@
-# Changelog
+# Registro de Cambios
 
-## Codebase Refactoring & Documentation
+## Refactorización del Código Base y Documentación
 
-### Python Module Standardization
-- `src/agente.py`: Implemented comprehensive Google-style docstrings, refined inline comments for clarity, and established a professional technical tone.
-- `src/config.py`: Centralized configuration logic with detailed docstrings, ensuring clear property definitions and robust error handling documentation.
-- `src/servidor.py`: Updated module headers and endpoint docstrings to reflect REST API standards.
-- `src/dashboard.py`: Structured visualization logic with clear modular documentation.
-
----
-
-## Persistence and Data Analysis
-
-### SQLite Integration
-- Transitioned from volatile, memory-based metric storage to persistent SQLite architecture (`data/metricas.db`).
-- Introduced historical data retention, surviving system reboots.
-- Deployed a new API endpoint, `/historial/{id}`, to facilitate time-series queries.
-
-### Expanded Metric Collection
-- **Disk Utilization:** Integrated logic to capture the usage percentage of the primary partition (`C:` or `/`).
-- **Database Schema Migration:** Implemented automated schema upgrades, allowing the server to dynamically append the `disk` column to legacy databases.
-- **Historical Charting:** Enhanced the Dashboard to render dynamic time-series line charts for CPU utilization over time via the `pandas` library.
+### Estandarización de Módulos Python
+- `src/agente.py`: Se implementaron docstrings completos estilo Google, se refinaron los comentarios en línea para mayor claridad y se estableció un tono técnico profesional.
+- `src/config.py`: Se centralizó la lógica de configuración con docstrings detallados, asegurando definiciones claras de propiedades y documentación robusta sobre el manejo de errores.
+- `src/servidor.py`: Se actualizaron los encabezados de los módulos y los docstrings de los endpoints para reflejar los estándares de la API REST.
+- `src/dashboard.py`: Se estructuró la lógica de visualización con documentación modular clara.
 
 ---
 
-## Automation and Tooling
+## Persistencia y Análisis de Datos
 
-### System Initialization Automation
-- **`setup.bat`:** Created a comprehensive bootstrap script that automates environment preparation:
-  - Validates Python installations.
-  - Provisions the virtual environment (`venv`).
-  - Resolves dependencies via `pip`.
-  - Compiles necessary executable artifacts (Portable and Service variants).
+### Integración con SQLite
+- Transición de un almacenamiento de métricas volátil en memoria a una arquitectura SQLite persistente (`data/metricas.db`).
+- Se introdujo la retención de datos históricos, sobreviviendo a reinicios del sistema.
+- Se implementó un nuevo endpoint de API, `/historial/{id}`, para facilitar las consultas de series temporales.
 
----
-
-## Enhanced Architecture Documentation
-
-### `/docs` Overhaul
-- **`instalacion.md`:** Standardized deployment instructions for both automated and source-based environments.
-- **`COMPONENTES.md`:** Detailed system architecture, component responsibilities, and configuration structures.
-- **`arquitectura.md`:** Refined the data flow diagrams and protocol definitions for advanced technical review.
-- **`COMPARTIR_PROYECTO.md`:** Established clear protocols for system distribution and agent deployment scenarios.
-- **`REFERENCIA_RAPIDA.md`:** Consolidated a technical cheat sheet for rapid operational reference.
+### Recolección de Métricas Ampliada
+- **Uso de Disco:** Se integró lógica para capturar el porcentaje de uso de la partición principal (`C:` o `/`).
+- **Migración del Esquema de Base de Datos:** Se implementaron actualizaciones automáticas de esquema, permitiendo que el servidor añada dinámicamente la columna `disk` a bases de datos heredadas.
+- **Gráficos Históricos:** Se mejoró el Dashboard para renderizar gráficos dinámicos de líneas de series temporales para el uso de CPU a lo largo del tiempo a través de la biblioteca `pandas`.
 
 ---
 
-## Remote Management and Security
+## Automatización y Herramientas
 
-### Remote Execution Capabilities
-- **Reboot Operations:** Implemented administrative controls within the Dashboard to queue remote reboot commands.
-- **Command Polling:** Enhanced the API to manage instruction queues, delivering commands to agents during standard metric payload exchanges.
-- **Agent Integration:** `agente.py` successfully parses reboot instructions and executes OS-level `shutdown` protocols.
-
-### Network and Reliability Enhancements
-- **SSL/TLS Infrastructure:** Added configuration scaffolding for certificate-based HTTPS communication.
-- **SMTP Alerts:** Built foundational integration for email-based node failure notifications.
-- **Heartbeat Monitoring:** Integrated logic to flag agents that fail to transmit telemetry within a 5-minute threshold.
-
-### Deferred Items
-- Validating and enabling the SMTP configuration within `config.json` for production environments.
+### Automatización de la Inicialización del Sistema
+- **`setup.bat`:** Se creó un script de inicio completo que automatiza la preparación del entorno:
+  - Valida las instalaciones de Python.
+  - Aprovisiona el entorno virtual (`venv`).
+  - Resuelve las dependencias vía `pip`.
+  - Compila los artefactos ejecutables necesarios (variantes Portable y de Servicio).
 
 ---
 
-**Last Update:** January 2026
+## Documentación de Arquitectura Mejorada
+
+### Revisión de `/docs`
+- **`instalacion.md`:** Se estandarizaron las instrucciones de implementación para entornos automatizados y basados en código fuente.
+- **`COMPONENTES.md`:** Arquitectura detallada del sistema, responsabilidades de los componentes y estructuras de configuración.
+- **`arquitectura.md`:** Se refinaron los diagramas de flujo de datos y las definiciones de protocolos para revisión técnica avanzada.
+- **`COMPARTIR_PROYECTO.md`:** Se establecieron protocolos claros para la distribución del sistema y los escenarios de implementación de agentes.
+- **`REFERENCIA_RAPIDA.md`:** Se consolidó una hoja de referencia técnica para operaciones rápidas.
+
+---
+
+## Gestión Remota y Seguridad
+
+### Capacidades de Ejecución Remota
+- **Operaciones de Reinicio:** Se implementaron controles administrativos dentro del Dashboard para poner en cola comandos de reinicio remotos.
+- **Sondeo de Comandos:** Se mejoró la API para gestionar colas de instrucciones, enviando comandos a los agentes durante los intercambios estándar de cargas útiles de métricas.
+- **Integración de Agentes:** `agente.py` analiza con éxito las instrucciones de reinicio y ejecuta protocolos `shutdown` a nivel de sistema operativo.
+
+### Mejoras en Redes y Confiabilidad
+- **Infraestructura SSL/TLS:** Se agregó andamiaje de configuración para la comunicación HTTPS basada en certificados.
+- **Alertas SMTP:** Se construyó una integración fundamental para las notificaciones de fallas de nodos basadas en correo electrónico.
+- **Monitoreo de Latidos (Heartbeat):** Se integró lógica para marcar a los agentes que no transmiten telemetría dentro de un umbral de 5 minutos.
+
+### Elementos Diferidos
+- Validar y habilitar la configuración SMTP dentro de `config.json` para entornos de producción.
+
+---
+
+**Última Actualización:** Enero 2026

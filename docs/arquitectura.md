@@ -1,53 +1,54 @@
-# Architecture and Data Flow
+# Arquitectura y Flujo de Datos
 
-## System Flow Diagram
+## Diagrama de Flujo del Sistema
 
 ```text
 ┌──────────────────┐         ┌──────────────────┐         ┌──────────────────┐
-│   REMOTE NODE    │         │  CENTRAL SERVER  │         │    WEB CLIENT    │
-│     (Agent)      │         │    (FastAPI)     │         │   (Dashboard)    │
+│    NODO REMOTO   │         │ SERVIDOR CENTRAL │         │    CLIENTE WEB   │
+│     (Agente)     │         │    (FastAPI)     │         │   (Dashboard)    │
 └────────┬─────────┘         └────────┬─────────┘         └────────┬─────────┘
          │                            │                            │
          │ POST /reportar             │                            │
          │ {cpu, ram, disk, temp}     │                            │
          ├───────────────────────────>│                            │
          │                            │                            │
-         │                  Persists to DB (SQLite)                │
+         │                 Persiste en BD (SQLite)                 │
          │                            │                            │
          │                            │<───── GET /estado ─────────│
          │                            │                            │
-         │                            ├────── JSON Response ──────>│
-         │                            │       (Updates 2s)         │
-         │ (5s Interval)              │                            │
+         │                            ├────── Respuesta JSON ──────>│
+         │                            │    (Actualiza cada 2s)     │
+         │ (Intervalo de 5s)          │                            │
          ├───────────────────────────>│                            │
 ```
 
-## System Components
+## Componentes del Sistema
 
-### 1. Remote Agent (`agente.py`)
-- Deployed on target infrastructure nodes.
-- **Metric Collection:** Captures CPU, RAM, Disk utilization, and Temperature at defined intervals.
-- **Transmission:** Dispatches JSON payloads to the `/reportar` POST endpoint.
-- **Resilience:** Implements exponential backoff and retry mechanisms for network partitions.
-- **Sensors:** Interrogates WMI/psutil for thermal data, contingent on hardware support and administrative privileges.
+### 1. Agente Remoto (`agente.py`)
+- Desplegado en los nodos de infraestructura objetivo.
+- **Recolección de Métricas:** Captura la utilización de CPU, RAM, Disco y la Temperatura en intervalos definidos.
+- **Transmisión:** Envía cargas útiles JSON al endpoint POST `/reportar`.
+- **Resiliencia:** Implementa mecanismos de retroceso exponencial y reintentos para particiones de red.
+- **Sensores:** Interroga a WMI/psutil para obtener datos térmicos, condicionado al soporte de hardware y privilegios administrativos.
 
-### 2. Central Server (`servidor.py`)
-- Hosts a FastAPI REST interface on the centralized NOC hardware.
+### 2. Servidor Central (`servidor.py`)
+- Aloja una interfaz REST FastAPI en el hardware del NOC centralizado.
 - **Endpoints:**
-  - `POST /reportar`: Ingests and validates metric payloads via Pydantic schemas.
-  - `GET /estado`: Returns the most recently recorded metrics for active nodes.
-  - `GET /historial/{id}`: Returns a time-series array of historical metrics.
-- **Storage Layer:** Utilizes SQLite (`data/metricas.db`) for lightweight, persistent data retention.
-- **Network:** Binds to port `8000` by default.
+  - `POST /reportar`: Ingiere y valida las cargas útiles de métricas a través de esquemas Pydantic.
+  - `GET /estado`: Devuelve las métricas registradas más recientemente para los nodos activos.
+  - `GET /historial/{id}`: Devuelve una matriz de series temporales de métricas históricas.
+  - `POST /admin/reiniciar/{id}`: Pone en cola una instrucción de reinicio para un nodo de agente específico.
+- **Capa de Almacenamiento:** Utiliza SQLite (`data/metricas.db`) para la retención de datos persistente y ligera.
+- **Red:** Se vincula al puerto `8000` por defecto.
 
-### 3. Monitoring Dashboard (`dashboard.py`)
-- Streamlit application serving as the primary visualization layer.
-- Implements asynchronous polling to refresh node states dynamically.
-- Renders responsive UI components, historical charts, and administrative controls.
+### 3. Dashboard de Monitoreo (`dashboard.py`)
+- Aplicación Streamlit que sirve como la capa principal de visualización.
+- Implementa un sondeo asíncrono para actualizar dinámicamente los estados de los nodos.
+- Renderiza componentes de interfaz de usuario receptivos, gráficos históricos y controles administrativos.
 
-## Communication Protocol
+## Protocolo de Comunicación
 
-### Inbound Request (Agent → Server)
+### Solicitud Entrante (Agente → Servidor)
 ```http
 POST /reportar HTTP/1.1
 Host: 192.168.4.143:8000
@@ -62,20 +63,21 @@ Content-Type: application/json
 }
 ```
 
-### Server Response (Server → Agent)
+### Respuesta del Servidor (Servidor → Agente)
 ```json
 {
-  "status": "ok"
+  "status": "ok",
+  "comando": null
 }
 ```
 
-### Data Query (Dashboard → Server)
+### Consulta de Datos (Dashboard → Servidor)
 ```http
 GET /estado HTTP/1.1
 Host: localhost:8000
 ```
 
-### Query Response (Server → Dashboard)
+### Respuesta de la Consulta (Servidor → Dashboard)
 ```json
 {
   "SERVER01 (192.168.1.100)": {
@@ -88,13 +90,13 @@ Host: localhost:8000
 }
 ```
 
-## Security Considerations
+## Consideraciones de Seguridad
 
-- **Authentication:** Currently operates without native authentication; relies on network perimeter security (VLAN/VPN).
-- **Transport:** Defaults to plain HTTP. Production deployments over un-trusted networks require enabling the SSL/TLS configuration parameter.
-- **Future Enhancements:** Token-based authentication and strict origin validation should be implemented prior to wide-scale deployment.
+- **Autenticación:** Actualmente opera sin autenticación nativa; depende de la seguridad del perímetro de red (VLAN/VPN).
+- **Transporte:** Por defecto usa HTTP plano. Las implementaciones de producción sobre redes no confiables requieren habilitar el parámetro de configuración SSL/TLS.
+- **Mejoras Futuras:** Se debe implementar autenticación basada en tokens y validación estricta de origen antes de una implementación a gran escala.
 
-## System Limitations
+## Limitaciones del Sistema
 
-- **Thermal Metrics:** Dependency on OS-level APIs (WMI/psutil) or external services (OpenHardwareMonitor) requires specific hardware configurations and elevated privileges.
-- **Scalability:** The current SQLite implementation is optimized for environments scaling up to approximately 100 concurrent nodes. Environments exceeding this threshold may require migration to a robust RDBMS (e.g., PostgreSQL).
+- **Métricas Térmicas:** La dependencia de APIs a nivel de SO (WMI/psutil) o servicios externos (OpenHardwareMonitor) requiere configuraciones de hardware específicas y privilegios elevados.
+- **Escalabilidad:** La implementación actual de SQLite está optimizada para entornos que escalan hasta aproximadamente 100 nodos concurrentes. Los entornos que superen este umbral pueden requerir la migración a un RDBMS robusto (ej. PostgreSQL).

@@ -1,80 +1,80 @@
-# Technical Components and Executables
+# Componentes Técnicos y Ejecutables
 
-## Executables
+## Ejecutables
 
-### `Iniciar_NOC.bat` (Central Server)
-**Automated launch script for the central monitoring system.**
+### `Iniciar_NOC.bat` (Servidor Central)
+**Script de lanzamiento automatizado para el sistema de monitoreo central.**
 
-Functionality:
-1. Initializes the FastAPI service on port 8000.
-2. Implements a 3-second delay for service readiness.
-3. Launches the Streamlit Dashboard.
+Funcionalidad:
+1. Inicializa el servicio FastAPI en el puerto 8000.
+2. Implementa un retraso de 3 segundos para la disponibilidad del servicio.
+3. Lanza el Dashboard de Streamlit.
 
-Usage:
+Uso:
 ```powershell
-# Execute via double-click or command line
+# Ejecutar mediante doble clic o línea de comandos
 .\Iniciar_NOC.bat
 ```
 
 ---
 
-### `NOC_SERVICIO.exe` (Remote Agent)
-**Compiled service executable for remote monitoring.**
+### `NOC_SERVICIO.exe` (Agente Remoto)
+**Ejecutable de servicio compilado para monitoreo remoto.**
 
-Generated utilizing PyInstaller from `src/agente_servicio.py`. Deployed via `instalar_agente.bat`.
+Generado utilizando PyInstaller desde `src/agente_servicio.py`. Desplegado mediante `instalar_agente.bat`.
 
-Usage:
+Uso:
 ```powershell
-# Execute installing script as Administrator
+# Ejecutar script de instalación como Administrador
 .\instalar_agente.bat
 ```
 
-**To regenerate the executable:**
+**Para regenerar el ejecutable:**
 ```powershell
-# Execute compilation tool
+# Ejecutar herramienta de compilación
 .\herramientas.bat
-# Select Option [1]
+# Seleccionar la Opción [1]
 ```
 
 ---
 
-## Source Code Components
+## Componentes del Código Fuente
 
-### 1. Remote Agent (`src/agente.py`)
-**Deployed on remote servers (via `AGENTE_FINAL.exe` or source).**
+### 1. Agente Remoto (`src/agente.py`)
+**Implementado en servidores remotos (a través de `AGENTE_FINAL.exe` o código fuente).**
 
-Core Responsibilities:
-- Gathers CPU, RAM, and Disk (Primary Partition) metrics at 5-second intervals.
-- Transmits JSON payloads to the Central Server.
-- Implements automated retry logic for transient network failures.
-- **Remote Management:** Processes reboot commands dispatched by the Central Server.
-- **Hardware Sensors:** Interfaces with WMI/Open Hardware Monitor to retrieve thermal metrics.
+Responsabilidades Principales:
+- Recolecta métricas de CPU, RAM y Disco (Partición Principal) en intervalos de 5 segundos.
+- Transmite cargas útiles JSON al Servidor Central.
+- Implementa lógica de reintento automatizada para fallas de red transitorias.
+- **Gestión Remota:** Procesa los comandos de reinicio enviados por el Servidor Central.
+- **Sensores de Hardware:** Se integra con WMI/Open Hardware Monitor para obtener métricas térmicas.
 
-Configuration Parsing:
-- **Dynamic IP Detection:** Automatically resolves its local IP address upon initialization.
-- **Central Routing:** Reads `SERVIDOR_CENTRAL_IP` from `src/config.py` (or `config.json`).
+Análisis de Configuración:
+- **Detección Dinámica de IP:** Resuelve automáticamente su dirección IP local al iniciarse.
+- **Enrutamiento Central:** Lee `SERVIDOR_CENTRAL_IP` desde `src/config.py` (o `config.json`).
 
-Output Example:
+Ejemplo de Salida:
 ```
-[Info] Agent started successfully: SERVER01 (192.168.1.100)
-[Info] Reporting endpoint: http://192.168.1.100:8000/reportar
-[Success] Data transmitted - CPU: 45.2% | RAM: 62.1% | Disk: 55.4%
+[Info] Agente iniciado exitosamente: SERVER01 (192.168.1.100)
+[Info] Endpoint de reporte: http://192.168.1.100:8000/reportar
+[Success] Datos transmitidos - CPU: 45.2% | RAM: 62.1% | Disk: 55.4%
 ```
 
 ---
 
-### 2. Central API Server (`src/servidor.py`)
-**FastAPI service hosted on the NOC infrastructure.**
+### 2. Servidor API Central (`src/servidor.py`)
+**Servicio FastAPI alojado en la infraestructura NOC.**
 
-REST Endpoints:
-| Method | Route | Description |
+Endpoints REST:
+| Método | Ruta | Descripción |
 |--------|-------|-------------|
-| GET | `/estado` | Retrieves the latest metrics array for all registered nodes. |
-| GET | `/historial/{id}` | Retrieves the historical timeseries data (last 50 data points). |
-| POST | `/reportar` | Ingestion endpoint for remote agent payloads. |
-| POST | `/admin/reiniciar/{id}` | Queues a reboot instruction for a specific agent node. |
+| GET | `/estado` | Recupera el arreglo de métricas más reciente para todos los nodos registrados. |
+| GET | `/historial/{id}` | Recupera los datos históricos de series temporales (últimos 50 puntos de datos). |
+| POST | `/reportar` | Endpoint de ingesta para las cargas útiles de los agentes remotos. |
+| POST | `/admin/reiniciar/{id}` | Pone en cola una instrucción de reinicio para un nodo de agente específico. |
 
-**GET /estado - Response Structure:**
+**GET /estado - Estructura de Respuesta:**
 ```json
 {
   "SERVER01 (192.168.1.100)": {
@@ -86,7 +86,7 @@ REST Endpoints:
 }
 ```
 
-**POST /reportar - Payload Structure:**
+**POST /reportar - Estructura de Carga Útil:**
 ```json
 {
   "id_servidor": "SERVER01 (192.168.1.100)",
@@ -97,55 +97,55 @@ REST Endpoints:
 }
 ```
 
-Default Port: `8000`
+Puerto Predeterminado: `8000`
 
 ---
 
-### 3. Monitoring Dashboard (`src/dashboard.py`)
-**Streamlit-based visualization interface.**
+### 3. Dashboard de Monitoreo (`src/dashboard.py`)
+**Interfaz de visualización basada en Streamlit.**
 
-Features:
-- Dynamically renders node cards for all registered servers.
-- Utilizes progress bars for resource utilization visualization.
-- **Historical Analysis:** Line charts plotting CPU utilization over time.
-- **Administrative Controls:** Integrated reboot mechanism with a confirmation modal.
-- Configured for asynchronous updates every 2 seconds.
+Características:
+- Renderiza dinámicamente tarjetas de nodos para todos los servidores registrados.
+- Utiliza barras de progreso para la visualización del uso de recursos.
+- **Análisis Histórico:** Gráficos de líneas que representan el uso de CPU a lo largo del tiempo.
+- **Controles Administrativos:** Mecanismo de reinicio integrado con un modal de confirmación.
+- Configurado para actualizaciones asíncronas cada 2 segundos.
 
-Default Port: `8501`
+Puerto Predeterminado: `8501`
 
 ---
 
-## Communication Architecture
+## Arquitectura de Comunicación
 
 ```text
-[REMOTE NODE]             [CENTRAL SERVER]           [WEB CLIENT]
-   Agent                      FastAPI                  Dashboard
+[NODO REMOTO]             [SERVIDOR CENTRAL]         [CLIENTE WEB]
+   Agente                     FastAPI                  Dashboard
   .exe/.py                  servidor.py               dashboard.py
       |                          |                         |
       |--- POST /reportar ------>|                         |
-      |    (5s interval)         |                         |
-      |                    Persists to DB                  |
+      |   (intervalo 5s)         |                         |
+      |                  Persiste en BD                    |
       |                          |                         |
       |                          |<----- GET /estado ------|
       |                          |                         |
       |                          |------- JSON ----------->|
-      |<--- 200 OK Response -----|      (2s interval)      |
+      |<--- Respuesta 200 OK ----|     (intervalo 2s)      |
 ```
 
 ---
 
-## Global Configuration Parameters
+## Parámetros de Configuración Globales
 
-Parameters are centralized in `config/config.json`.
+Los parámetros están centralizados en `config/config.json`.
 
-### Agent Configuration
-- `intervalo_envio`: Frequency of metric transmission (Default: 5s).
-- `timeout`: Network request timeout threshold.
+### Configuración del Agente
+- `intervalo_envio`: Frecuencia de transmisión de métricas (Predeterminado: 5s).
+- `timeout`: Umbral de tiempo de espera de la solicitud de red.
 
-### Server Configuration
-- `ip`: Central server IPv4 address binding.
-- `puerto`: API listening port (Default: 8000).
+### Configuración del Servidor
+- `ip`: Enlace de dirección IPv4 del servidor central.
+- `puerto`: Puerto de escucha de la API (Predeterminado: 8000).
 
-### Security/System Configuration
-- `usar_ssl`: Toggles HTTPS protocol enforcement.
-- `logs_habilitados`: Enables rotating file log generation.
+### Configuración de Seguridad/Sistema
+- `usar_ssl`: Alterna el cumplimiento del protocolo HTTPS.
+- `logs_habilitados`: Habilita la generación de archivos de registro rotativos.

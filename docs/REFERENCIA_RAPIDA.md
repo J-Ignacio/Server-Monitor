@@ -1,36 +1,36 @@
-# Quick Reference Guide
+# Guía de Referencia Rápida
 
-## Core Execution
+## Ejecución Principal
 
-### Central Server Initialization
+### Inicialización del Servidor Central
 ```powershell
-# Double-click or execute:
+# Haga doble clic o ejecute:
 .\Iniciar_NOC.bat
 ```
-*Initializes both the FastAPI service and the Streamlit Dashboard simultaneously.*
+*Inicializa el servicio FastAPI y el Dashboard de Streamlit simultáneamente.*
 
-### Remote Agent Initialization
+### Inicialización del Agente Remoto
 ```powershell
-# Double-click or execute:
+# Haga doble clic o ejecute:
 .\AGENTE_PORTABLE.exe
 ```
-*Initializes metric collection and transmission. Requires prior IP configuration in `config.json`.*
+*Inicializa la recolección y transmisión de métricas. Requiere configuración previa de la IP en `config.json`.*
 
 ---
 
-## Critical Endpoints
+## Endpoints Críticos
 
-| Resource | URL | Description |
+| Recurso | URL | Descripción |
 |----------|-----|-------------|
-| **Dashboard** | `http://localhost:8501` | Primary visualization interface. |
-| **API State** | `http://localhost:8000/estado` | GET endpoint returning the current node array (JSON). |
-| **API Docs** | `http://localhost:8000/docs` | Swagger UI detailing REST endpoints. |
+| **Dashboard** | `http://localhost:8501` | Interfaz principal de visualización. |
+| **Estado API** | `http://localhost:8000/estado` | Endpoint GET que devuelve el arreglo de nodos actual (JSON). |
+| **Documentación API** | `http://localhost:8000/docs` | Interfaz de Swagger detallando los endpoints REST. |
 
 ---
 
-## Data Structures
+## Estructuras de Datos
 
-**GET `/estado` Response Format:**
+**Formato de Respuesta de GET `/estado`:**
 ```json
 {
   "SERVER01 (192.168.1.100)": {
@@ -50,9 +50,9 @@
 
 ---
 
-## Configuration Parameter Override
+## Anulación de Parámetros de Configuración
 
-To manually override the Central Server routing on an agent node, edit the generated `config/config.json`:
+Para anular manualmente el enrutamiento del Servidor Central en un nodo de agente, edite el archivo `config/config.json` generado:
 
 ```json
 {
@@ -65,26 +65,26 @@ To manually override the Central Server routing on an agent node, edit the gener
 
 ---
 
-## Common Diagnostic Resolutions
+## Resoluciones de Diagnóstico Comunes
 
-| Symptom | Probable Cause | Corrective Action |
+| Síntoma | Causa Probable | Acción Correctiva |
 |---------|----------------|-------------------|
-| Empty Dashboard | Agents unable to establish connection. | Validate `servidor_central` IP in agent `config.json`. |
-| "Port 8000 in use" | Ghost API process occupying binding. | Terminate `python.exe` processes or reboot Central Server. |
-| Connection Timeout | Ingress traffic dropped by OS firewall. | Execute firewall `allow` rule for TCP port 8000. |
+| Dashboard Vacío | Agentes incapaces de establecer conexión. | Valide la IP de `servidor_central` en `config.json` del agente. |
+| "Puerto 8000 en uso" | Proceso API fantasma ocupando el puerto. | Termine los procesos `python.exe` o reinicie el Servidor Central. |
+| Tiempo de Espera | Tráfico de entrada bloqueado por el firewall del sistema operativo. | Ejecute regla `allow` del firewall para el puerto TCP 8000. |
 
 ---
 
-## Developer Bootstrap Workflow
+## Flujo de Trabajo para Desarrolladores
 
 ```powershell
-# 1. Initialize Python Environment
+# 1. Inicializar Entorno de Python
 python -m venv venv
 .\venv\Scripts\activate
 
-# 2. Resolve Dependencies
+# 2. Resolver Dependencias
 pip install -r requirements.txt
 
-# 3. Generate Artifacts
+# 3. Generar Artefactos
 .\herramientas.bat
 ```
