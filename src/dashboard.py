@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from datetime import datetime, timezone
 import sqlite3
+import json
  
 # Asegurar que el directorio raíz está en el path para importar src.config
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -546,6 +547,22 @@ if base_datos:
                                 st.button("✅ Sí", key=f"btn_yes_{servidor}", on_click=enviar_orden, args=(servidor,))
                             with col_no:
                                 st.button("❌ No", key=f"btn_no_{servidor}", on_click=actualizar_estado, args=(f"conf_{servidor}", False))
+
+                    # --- Usuarios Conectados ---
+                    usuarios_data = info.get("usuarios")
+                    if usuarios_data:
+                        try:
+                            usuarios_lista = json.loads(usuarios_data) if isinstance(usuarios_data, str) else usuarios_data
+                            if usuarios_lista:
+                                df_usuarios = pd.DataFrame(usuarios_lista)
+                                st.markdown("##### 👥 Usuarios Conectados")
+                                st.dataframe(df_usuarios, hide_index=True, use_container_width=True)
+                            else:
+                                st.caption("No hay usuarios conectados detectados.")
+                        except Exception as e:
+                            st.caption("Error al cargar usuarios.")
+                    else:
+                        st.caption("No hay datos de usuarios disponibles.")
 
                     # --- Gráfico Histórico ---
                     try:

@@ -16,6 +16,8 @@ from src.config import SERVIDOR_CENTRAL_HOST, SERVIDOR_CENTRAL_PUERTO, DEBUG, DB
 
 app = FastAPI()
 
+import json
+
 # Modelo de validación para métricas
 class Metricas(BaseModel):
     id_servidor: str   # Identificador del servidor
@@ -23,6 +25,7 @@ class Metricas(BaseModel):
     ram: float         # % de memoria RAM
     temp: float        # Temperatura
     disk: float        # % de uso de Disco
+    usuarios: list = [] # Lista de usuarios conectados
 
 # --- Funciones de Base de Datos ---
 def init_db():
@@ -37,7 +40,8 @@ def init_db():
             cpu REAL,
             ram REAL,
             temp REAL,
-            disk REAL
+            disk REAL,
+            usuarios TEXT
         )
     ''')
     
@@ -50,6 +54,9 @@ def init_db():
     if "disk" not in columnas:
         print("🔧 Migrando base de datos: Añadiendo columna 'disk'...")
         cursor.execute("ALTER TABLE metricas ADD COLUMN disk REAL")
+    if "usuarios" not in columnas:
+        print("🔧 Migrando base de datos: Añadiendo columna 'usuarios'...")
+        cursor.execute("ALTER TABLE metricas ADD COLUMN usuarios TEXT")
 
     conn.commit()
     conn.close()
@@ -138,7 +145,7 @@ async def obtener_estado():
     
     # Obtener la última métrica de cada servidor
     cursor.execute('''
-        SELECT id_servidor, cpu, ram, temp, disk, timestamp 
+        SELECT id_servidor, cpu, ram, temp, disk, timestamp, usuarios
         FROM metricas 
         WHERE id IN (SELECT MAX(id) FROM metricas GROUP BY id_servidor)
     ''')
@@ -159,8 +166,9 @@ async def reportar_metricas(metricas: Metricas):
     try:
         conn = sqlite3.connect(str(DB_FILE))
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO metricas (id_servidor, cpu, ram, temp, disk) VALUES (?, ?, ?, ?, ?)",
-                       (metricas.id_servidor, metricas.cpu, metricas.ram, metricas.temp, metricas.disk))
+        usuarios_json = json.dumps(metricas.usuarios)
+        cursor.execute("INSERT INTO metricas (id_servidor, cpu, ram, temp, disk, usuarios) VALUES (?, ?, ?, ?, ?, ?)",
+                       (metricas.id_servidor, metricas.cpu, metricas.ram, metricas.temp, metricas.disk, usuarios_json))
         conn.commit()
         conn.close()
         

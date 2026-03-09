@@ -255,12 +255,26 @@ def enviar_datos(stop_event=None) -> None:
             break
 
         try:
+            # Obtener usuarios conectados
+            usuarios_conectados = []
+            try:
+                for user in psutil.users():
+                    tiempo_inicio = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(user.started))
+                    usuarios_conectados.append({
+                        "nombre": user.name,
+                        "terminal": user.terminal or "N/A",
+                        "inicio": tiempo_inicio
+                    })
+            except Exception as e:
+                logging.warning(f"Error obtaining connected users: {e}")
+
             metricas = {
                 "id_servidor": ID_SERVIDOR,
                 "cpu": psutil.cpu_percent(interval=1),
                 "ram": psutil.virtual_memory().percent,
                 "temp": obtener_temperatura(),
-                "disk": psutil.disk_usage(os.path.abspath(os.sep)).percent
+                "disk": psutil.disk_usage(os.path.abspath(os.sep)).percent,
+                "usuarios": usuarios_conectados
             }
             
             response = requests.post(
