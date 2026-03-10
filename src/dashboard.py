@@ -477,13 +477,26 @@ if base_datos:
             # Clase extra para modo compacto
             css_compacto = "compact" if modo_compacto else ""
 
+            # --- Parseo del Nombre del Servidor para mostrar solo una IP ---
+            import re
+            servidor_display = servidor
+            # Buscamos un formato como "Hostname (192.168.1.5 - 10.0.0.2)"
+            match = re.match(r"(.* \()([0-9a-fA-F:\.\- ]+)(\))", servidor)
+            if match:
+                hostname_part = match.group(1)
+                ips_part = match.group(2)
+                end_part = match.group(3)
+                # Tomamos la primera IP antes de cualquier " - "
+                primera_ip = ips_part.split(" - ")[0].strip()
+                servidor_display = f"{hostname_part}{primera_ip}{end_part}"
+
             # --- Construcción de Tarjeta HTML ---
             raw_html = f"""
             <div class="server-card {css_compacto}">
                 <div class="card-header">
                     <div class="server-title">
                         <span class="status-indicator {status_class}"></span>
-                        {servidor}
+                        {servidor_display}
                     </div>
                     <div style="font-size: 0.8rem; color: #666;">{status_text}</div>
                 </div>
