@@ -80,39 +80,40 @@ def obtener_ip_real() -> str:
 
     If a manual IP address is configured, it returns that value immediately.
     Otherwise, it attempts to connect to the central server to determine the primary
-    routing IP. It also scans all available network interfaces, filtering out loopback
-    and auto-configuration (APIPA) addresses, returning a concatenated string if multiple
-    valid addresses are discovered.
+    routing IP. It also scans all available network interfaces, filtering out loopback,
+    virtual, and auto-configuration (APIPA) addresses, returning a single valid IP.
 
     Returns:
-        str: The detected IP address or addresses of the server. Defaults to '127.0.0.1'.
+        str: The detected primary IP address of the server. Defaults to '127.0.0.1'.
     """
     if AGENTE_IP_MANUAL:
         return AGENTE_IP_MANUAL
 
-    ips = set()
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect((SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO))
-        ips.add(s.getsockname()[0])
+        ip = s.getsockname()[0]
         s.close()
+        if ip and not ip.startswith("127.") and not ip.startswith("169.254."):
+            return ip
     except Exception:
         pass
 
+    # Fallback if UDP connection fails to determine IP
+    invalid_ifaces = ["docker", "vethernet", "wsl", "virtual", "vmware", "vbox", "loopback"]
     try:
         for interface, snics in psutil.net_if_addrs().items():
+            if any(virt in interface.lower() for virt in invalid_ifaces):
+                continue
             for snic in snics:
                 if snic.family == socket.AF_INET:
                     ip = snic.address
                     if not ip.startswith("127.") and not ip.startswith("169.254."):
-                        ips.add(ip)
+                        return ip
     except Exception:
         pass
 
-    if not ips:
-        return '127.0.0.1'
-
-    return " - ".join(sorted(list(ips)))
+    return '127.0.0.1'
 
 def obtener_temperatura() -> float:
     """
