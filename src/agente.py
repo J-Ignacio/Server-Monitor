@@ -89,16 +89,17 @@ def obtener_ip_real() -> str:
     """
     if AGENTE_IP_MANUAL:
         return AGENTE_IP_MANUAL
-
-    ips = set()
+    
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect((SERVIDOR_CENTRAL_IP, SERVIDOR_CENTRAL_PUERTO))
-        ips.add(s.getsockname()[0])
+        ip = s.getsockname()[0]
         s.close()
+        return ip
     except Exception:
         pass
 
+    ips = set()
     try:
         for interface, snics in psutil.net_if_addrs().items():
             for snic in snics:
