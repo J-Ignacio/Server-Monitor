@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import base64
 import sys
+import re
 from pathlib import Path
 from datetime import datetime, timezone
 import sqlite3
@@ -447,6 +448,73 @@ if base_datos:
     """
     st.markdown(hud_html, unsafe_allow_html=True)
 
+    # --- Tabla de Administración de Agentes ---
+    st.markdown("### 📋 Administración de Agentes")
+
+    # Crear cabecera de la tabla
+    col_nombre, col_estado, col_conexion, col_accion = st.columns([3, 1, 2, 1])
+    with col_nombre: st.markdown("**Nombre del Servidor**")
+    with col_estado: st.markdown("**Estado**")
+    with col_conexion: st.markdown("**Última Conexión**")
+    with col_accion: st.markdown("**Acciones**")
+
+    st.markdown("---")
+
+    for i, (servidor, info) in enumerate(items_ordenados):
+        col_nombre, col_estado, col_conexion, col_accion = st.columns([3, 1, 2, 1])
+
+        # Parseo del Nombre del Servidor
+        servidor_display = servidor
+        match = re.match(r"(.* \()([0-9a-fA-F:\.\- ]+)(\))", servidor)
+        if match:
+            hostname_part = match.group(1)
+            ips_part = match.group(2)
+            end_part = match.group(3)
+            primera_ip = ips_part.split(" - ")[0].strip()
+            servidor_display = f"{hostname_part}{primera_ip}{end_part}"
+
+        with col_nombre:
+            st.write(servidor_display)
+
+        with col_estado:
+            # Lógica de Estado (5 minutos)
+            # El cálculo se hizo en el pre-cálculo y se guardó en `_status_class` y `_status_text`
+            is_online = info.get('_status_class') in ['status-online', 'status-warning']
+            estado_icon = "🟢" if is_online else "🔴"
+            st.write(f"{estado_icon} {'Online' if is_online else 'Offline'}")
+
+        with col_conexion:
+            timestamp_str = info.get('timestamp', 'Desconocido')
+            if timestamp_str != 'Desconocido':
+                try:
+                    # Mostrar la fecha exacta y el tiempo transcurrido
+                    if "." in timestamp_str:
+                        last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+                    else:
+                        last_seen = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                    st.write(f"{last_seen.strftime('%Y-%m-%d %H:%M:%S')} ({info.get('_tiempo_atras')})")
+                except:
+                    st.write(timestamp_str)
+            else:
+                st.write("Desconocido")
+
+        with col_accion:
+            if st.button("🗑️", key=f"btn_del_table_{servidor}", help="Eliminar Agente"):
+                try:
+                    conn = sqlite3.connect(str(DB_FILE))
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM metricas WHERE id_servidor = ?", (servidor,))
+                    conn.commit()
+                    conn.close()
+                    st.success(f"Eliminado: {servidor}")
+                    time.sleep(1)
+                    rerun()
+                except Exception as e:
+                    st.error(f"Error al eliminar: {e}")
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("### 📊 Vistas de Métricas")
+
     # --- Lógica de Grid (Cuadrícula) ---
     # En lugar de una columna por servidor, usamos filas de 3 columnas
     COLUMNAS_POR_FILA = 3
@@ -478,7 +546,6 @@ if base_datos:
             css_compacto = "compact" if modo_compacto else ""
 
             # --- Parseo del Nombre del Servidor para mostrar solo una IP ---
-            import re
             servidor_display = servidor
             # Buscamos un formato como "Hostname (192.168.1.5 - 10.0.0.2)"
             match = re.match(r"(.* \()([0-9a-fA-F:\.\- ]+)(\))", servidor)
@@ -602,20 +669,7 @@ if base_datos:
                         # Si falla la petición (timeout, error de red), muestra este mensaje.
                         st.caption("Cargando historial...")
 
-                    # --- Botón de Eliminación (Base de Datos) ---
-                    st.write("---")
-                    if st.button("🗑️ Eliminar Registro", key=f"btn_del_{servidor}", help="Borra este servidor de la base de datos"):
-                        try:
-                            conn = sqlite3.connect(str(DB_FILE))
-                            cursor = conn.cursor()
-                            cursor.execute("DELETE FROM metricas WHERE id_servidor = ?", (servidor,))
-                            conn.commit()
-                            conn.close()
-                            st.success(f"Eliminado: {servidor}")
-                            time.sleep(1)
-                            rerun()
-                        except Exception as e:
-                            st.error(f"Error al eliminar: {e}")
+                    # Botón de eliminación movido a la tabla de administración
             
     # --- Trigger de Alerta Global (Audio + Visual) ---
     # Se ejecuta una sola vez al final si algún servidor activó la bandera
