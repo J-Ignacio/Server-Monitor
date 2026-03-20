@@ -261,13 +261,14 @@ custom_css = """
     .stButton > button {
         width: 100%;
         background-color: rgba(255, 255, 255, 0.05) !important;
-        color: #fff !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
         transition: all 0.2s;
     }
     .stButton > button:hover {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        border-color: #fff !important;
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        border-color: #ffffff !important;
+        color: #ffffff !important;
     }
     
     /* Expander transparente */
@@ -367,6 +368,17 @@ def enviar_orden(servidor):
     except Exception as e:
         st.session_state[f"msg_error_{servidor}"] = f"Error: {e}"
     st.session_state[f"conf_{servidor}"] = False
+
+def enviar_desconectar(servidor, usuario):
+    try:
+        import urllib.parse
+        usuario_url = urllib.parse.quote(usuario)
+        servidor_url = urllib.parse.quote(servidor)
+        protocolo = "https" if USAR_SSL else "http"
+        requests.post(f"{protocolo}://127.0.0.1:{SERVIDOR_CENTRAL_PUERTO}/admin/desconectar/{servidor_url}/{usuario_url}", verify=VERIFICAR_SSL)
+        st.session_state[f"msg_exito_{servidor}"] = f"Orden de desconexión enviada para el usuario {usuario}."
+    except Exception as e:
+        st.session_state[f"msg_error_{servidor}"] = f"Error al desconectar: {e}"
 
 # Helper para colores de barras (Definido fuera del bucle para optimizar)
 def get_color(val):
@@ -634,9 +646,19 @@ if base_datos:
                         try:
                             usuarios_lista = json.loads(usuarios_data) if isinstance(usuarios_data, str) else usuarios_data
                             if usuarios_lista:
-                                df_usuarios = pd.DataFrame(usuarios_lista)
-                                st.markdown("##### 👥 Usuarios Conectados")
-                                st.dataframe(df_usuarios, hide_index=True, use_container_width=True)
+                                st.markdown(f"##### 👥 Usuarios en {servidor_display}")
+                                for user in usuarios_lista:
+                                    nombre_usuario = user.get("nombre", "Desconocido")
+                                    # LED status indicator (Green if server is online, Red if offline)
+                                    estado_icon = "🟢" if info.get('_status_class') in ['status-online', 'status-warning'] else "🔴"
+
+                                    col_led, col_user, col_btn = st.columns([1, 3, 4])
+                                    with col_led:
+                                        st.write(estado_icon)
+                                    with col_user:
+                                        st.write(nombre_usuario)
+                                    with col_btn:
+                                        st.button("Desconectar", key=f"btn_disc_{servidor}_{nombre_usuario}", on_click=enviar_desconectar, args=(servidor, nombre_usuario))
                             else:
                                 st.caption("No hay usuarios conectados detectados.")
                         except Exception as e:
