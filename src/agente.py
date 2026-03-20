@@ -286,7 +286,9 @@ def enviar_datos(stop_event=None) -> None:
             response.raise_for_status()
             
             respuesta_json = response.json()
-            if respuesta_json.get("comando") == "reiniciar":
+            comando_recibido = respuesta_json.get("comando")
+
+            if comando_recibido == "reiniciar":
                 print("[Alert] REBOOT COMMAND RECEIVED: Rebooting server in 5 seconds...")
                 logging.warning("[Alert] REBOOT COMMAND RECEIVED: Rebooting server in 5 seconds...")
                 time.sleep(5)
@@ -294,6 +296,34 @@ def enviar_datos(stop_event=None) -> None:
                     os.system("shutdown /r /t 0 /f")
                 else:
                     os.system("shutdown -r now")
+            elif comando_recibido and comando_recibido.startswith("desconectar:"):
+                usuario_a_desconectar = comando_recibido.split(":", 1)[1]
+                print(f"[Alert] DISCONNECT COMMAND RECEIVED for user: {usuario_a_desconectar}")
+                logging.warning(f"[Alert] DISCONNECT COMMAND RECEIVED for user: {usuario_a_desconectar}")
+                import subprocess
+                if os.name == 'nt':
+                    # Find the session ID for the user
+                    try:
+                        # query session / qwinsta returns a table with columns: SESSIONNAME USERNAME ID STATE TYPE DEVICE
+                        resultado = subprocess.run(["query", "session", usuario_a_desconectar], capture_output=True, text=True)
+                        lineas = resultado.stdout.strip().split('\n')
+                        if len(lineas) > 1:
+                            # The first line is headers. Skip it.
+                            for linea in lineas[1:]:
+                                partes = linea.split()
+                                # The ID is usually the 3rd or 2nd column depending on if SESSIONNAME is present.
+                                # Let's find the numeric part.
+                                for parte in partes:
+                                    if parte.isdigit():
+                                        session_id = parte
+                                        print(f"Logging off session ID {session_id} for user {usuario_a_desconectar}")
+                                        subprocess.run(["logoff", session_id])
+                                        break
+                    except Exception as e:
+                        logging.error(f"Error disconnecting user on Windows: {e}")
+                else:
+                    # Linux process termination
+                    subprocess.run(["pkill", "-KILL", "-u", usuario_a_desconectar])
 
             print(f"[Success] Data transmitted - CPU: {metricas['cpu']:.1f}% | RAM: {metricas['ram']:.1f}% | Disk: {metricas['disk']:.1f}%")
             logging.info(f"Transmitted - CPU: {metricas['cpu']}% | RAM: {metricas['ram']}% | Disk: {metricas['disk']}% | Temp: {metricas['temp']:.1f}°C")

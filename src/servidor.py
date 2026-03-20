@@ -160,6 +160,12 @@ async def solicitar_reinicio(id_servidor: str):
     comandos_pendientes[id_servidor] = "reiniciar"
     return {"mensaje": f"Comando de reinicio encolado para {id_servidor}"}
 
+# POST: Encola un comando de desconexión para un usuario específico en un servidor
+@app.post("/admin/desconectar/{id_servidor}/{usuario}")
+async def solicitar_desconexion(id_servidor: str, usuario: str):
+    comandos_pendientes[id_servidor] = f"desconectar:{usuario}"
+    return {"mensaje": f"Comando de desconexión encolado para el usuario {usuario} en el servidor {id_servidor}"}
+
 # POST: Recibe métricas de un agente y las guarda en BD
 @app.post("/reportar")
 async def reportar_metricas(metricas: Metricas):
